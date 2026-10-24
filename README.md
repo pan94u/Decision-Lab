@@ -1,15 +1,15 @@
-# Decision Lab 决策模型评测平台
+# Decision Lab · CLEF / Jev 决策评测
 
-私有评测工作台，包含任务库、JSON 导入、批量评测、重复运行、失败重试、原始输出、约束检查与最优解比较。无运行时第三方 npm 依赖。
+用于 **System One 类型决策模型**的私有评测工作台：任务导入、批量运行、结果对照、原生概率可视化和转人工阈值分析。
 
-## 本地启动
+## 启动
 
 ```sh
 cd /Users/pan9/code/DM-eval/decision-lab
 npm run dev
 ```
 
-打开 http://localhost:4173 。本地真实调用可通过环境变量 `CLOUDFLARE_API_TOKEN`、`CLOUDFLARE_ACCOUNT_ID` 配置，也可以在页面填写临时凭据。不要把密钥提交到源码。线上密钥使用 Sites secret 环境变量保存。
+打开 http://localhost:4173 。真实模型需服务端环境变量 `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID`，或在页面配置临时 Token。线上密钥保存在 Sites secrets 中，不在源码、任务记录和 localStorage 内。切换其他服务商不会复用 Cloudflare 凭据。
 
 ```sh
 npm run build
@@ -17,41 +17,68 @@ npm test
 npm run validate
 ```
 
-`src/page.html` 为界面样式，`src/app.js` 为交互，`src/engine.js` 为评分和精确求解器，`src/seeds.js` 为 12 项合成基准，`src/server.js` 为模型代理。`scripts/assemble.mjs` 将它们组合为自包含的 `worker/index.js`，构建产物在 `dist/`。修改源码后重新启动本地服务。
+## 模型协议
 
-## 任务格式
+- Cloudflare：`@cf/cloudflare/clef` / `@cf/cloudflare/clef-flash`。
+- 请求为 `{model, state, questions}`，**不发送 messages、temperature、max_tokens**。
+- 支持 `choice`、`noul`、`score` 原生答案与概率。无自由文本推理字段。
+- 接口保留完整 `answers`、`confidence`、`probabilities`、模型名、usage 与调用耗时。
+- Jev 兼容模式支持 HTTPS System One endpoint 和独立 Token；尚未使用 Jev 真实凭据验证，不宣称已完成 Jev 实测。
+- 参考标签 `expected`、人工依据 `rationale` 和工作流配置不会进入发给模型的请求，服务端使用严格字段白名单。
 
-支持单个对象、对象数组、`{"tasks": [...]}`。可在任务库下载完整示例。
+## 导入格式
+
+支持单个任务、任务数组、`{"tasks": [...]}`；每批最多 50 项，每项 1–64 个问题。当前输入为文本或 JSON state，未提供图像上传功能。
 
 ```json
 {
-  "title": "资源分配",
-  "description": "选择最高收益的可行行动组合。",
-  "category": "自定义",
-  "budgets": {"预算": 10, "人力": 4},
-  "riskWeight": 0.5,
-  "minSelect": 1,
-  "required": [],
-  "options": [
-    {"id": "a", "label": "行动 A", "costs": {"预算": 6, "人力": 2}, "value": 12, "downside": 2},
-    {"id": "b", "label": "行动 B", "costs": {"预算": 4, "人力": 2}, "value": 7, "downside": 1, "requires": ["a"]}
-  ]
+  "title": "支付故障分流",
+  "description": "区分故障处理与发票问题",
+  "category": "工单路由",
+  "state": {"current": "所有客户付款接口返回 500，没有替代付款入口。"},
+  "questions": {
+    "route": {
+      "type": "choice",
+      "instructions": "哪个团队负责当前问题？",
+      "criteria": {"technical": "系统故障与接口错误", "billing": "账单和发票"}
+    },
+    "escalate": {"type": "noul", "instructions": "核心付款流程是否不可用且无替代方案？"}
+  },
+  "expected": {"route": "technical", "escalate": true},
+  "rationale": "接口故障且核心流程不可用。",
+  "workflow": {"routeQuestion": "route", "escalateQuestion": "escalate"}
 }
 ```
 
-`requires` 指向前置行动，`excludes` 指向互斥行动。导入会验证字段并拒绝不可行任务。每项 2–16 个行动，1–6 个资源维度，每次最多导入 50 项。收益与风险损失均为非负有限数，downside 不大于 value，风险权重为 0–1。
+Choice 参考标签为命名选项，Noul 为布尔值，Score 为从 0 开始的等级整数。Score criteria 是 2–10 个自足的有序描述。任务库可下载完整模板。
 
-## 评分
+## 评测口径
 
-目标值 = Σvalue − riskWeight × Σdownside。违反任一预算、依赖、互斥、必选或最少行动数约束，或输出含未知/重复 ID，得 0 分；否则得分为目标值 / 精确枚举最优值 × 100。最优值为 0 时可行解得 100 分。格式或 API 错误按 0 分计入汇总。延迟和 token 用量另行记录，不进入质量得分。
+- Choice 使用接口返回 choice；Noul 以 p ≥ 0.5 判真；Score 使用概率众数衡量等级命中，另报告返回期望评分相对标签的 MAE。
+- 准确率对失败/未完成问题计错；场景全对率要求所有原子判断均命中。
+- Brier：Noul 为 `(p-y)^2`，多类为 `0.5 * sum((p-y)^2)`，均在 0–1 之间，越低越好。
+- NLL 使用参考标签的概率，截断到最小 1e-15；ECE 为选中类别概率的 10 桶加权校准误差，**不使用 API confidence 计算校准**。
+- 概率指标仅统计有效输出并显示有效/总判断数；概率和允许 0.002 的舍入误差后归一化。
+- Confidence 原样保留，Noul 单独显示派生值 `abs(2p-1)`，不冒充接口字段。
+- 可调 p(top) 阈值计算原子判断自动处理覆盖率和接受集错误率；无接受项时错误率为 null。任一原子判断低于阈值时场景模拟转人工。
+- 组合路由和升级均为只读模拟，不执行业务操作。
 
-模型返回 `{"selected": ["a"], "reason": "简短决策依据"}`。temperature = 0，max_tokens = 1800，单次接口超时为 60 秒。支持 Cloudflare response 文本、对象及 chat choices 格式；兼容接口要求完整 HTTPS chat/completions URL。
+## 初始任务与真实结果
 
-## 数据与边界
+12 项合成场景、36 个原子判断，覆盖工单、工具权限、安全证据、政策边界、发布门禁和证据完整性。参考标签按场景中的明确规则人工编写，不是独立公开 benchmark。
 
-- 任务与结果保存在当前浏览器 localStorage，不会跨浏览器同步。可导出 JSON 备份。
-- 批量运行由页面顺序驱动，页面关闭会中断；再次打开后可重试未完成项。没有后台任务队列。
-- 演示是实时计算的确定性贪心策略；基线是精确求解器，不冒充大模型结果。
-- 当前为离散行动组合优化评测；12 项任务是合成基准，不覆盖连续动作、交互式多步环境或真实业务安全性。
-- 私有线上站点依赖 Sites owner-only 访问控制。若将来改为公开服务，应先引入用户隔离、调用配额、后台队列和数据库。
-- Cloudflare 官方接口说明：https://developers.cloudflare.com/workers-ai/get-started/rest-api/
+`src/initial-runs.json` 包含 2026-10-24 真实调用 CLEF 和 CLEF Flash 的完整结果，每个模型 12 次调用。初次进入自动显示，可查原始答案；这只是小样本验收，不能外推总体能力排名。
+
+均匀概率演示不读标签；参考上界直接读答案，仅验证评分器。两者不进入真实模型汇总。
+
+## 实现与限制
+
+- `src/page.html`：样式；`src/app.js`：交互；`src/engine.js`：校验、协议投影、归一化和指标；`src/seeds.js`：任务；`src/server.js`：模型代理。
+- `scripts/assemble.mjs` 组合为自包含 `worker/index.js`，产物为 `dist/`。
+- 任务与结果存当前浏览器，不跨设备同步。支持 JSON 导出，尚无结果备份导入。
+- 顺序任务运行依赖页面保持打开；关闭后可重试未完成项，没有后台队列。
+- 当前是独立判断与单步复合流程，尚未实现多轮环境仿真、视觉任务或大量样本校准。
+- 线上依赖 Sites owner-private 访问控制；公开前需增加用户隔离与配额。
+- 旧版组合优化代码在父目录 `decision-lab-legacy-v1` 留档，不参与当前构建。
+
+协议参考：[CLEF 官方文档](https://developers.cloudflare.com/workers-ai/models/clef/)、[TypeSafe 问题类型](https://docs.typesafe.ai/introduction)、[Confidence 定义](https://docs.typesafe.ai/confidence)。
