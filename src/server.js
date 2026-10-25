@@ -1,6 +1,6 @@
 export async function handle(request,env={}){
  const url=new URL(request.url),json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{'content-type':'application/json; charset=utf-8','cache-control':'no-store'}});
- if(url.pathname==='/api/health')return json({ok:true,cloudflareConfigured:!!env.CLOUDFLARE_API_TOKEN,protocol:'systemone',models:['clef','clef-flash']});
+ if(url.pathname==='/api/health')return json({ok:true,cloudflareConfigured:!!env.CLOUDFLARE_API_TOKEN&&/^[a-fA-F0-9]{32}$/.test(env.CLOUDFLARE_ACCOUNT_ID||''),protocol:'systemone',models:['clef','clef-flash']});
  if(url.pathname!=='/api/infer')return json({error:'Not found'},404);
  if(request.method!=='POST')return json({error:'Method not allowed'},405);
  if(request.headers.get('origin')&&request.headers.get('origin')!==url.origin)return json({error:'跨域调用不允许'},403);
@@ -8,10 +8,12 @@ export async function handle(request,env={}){
  if(config.type==='cloudflare'){if(!['clef','clef-flash'].includes(model))throw Error('请选择 clef 或 clef-flash，不接受聊天模型');let account=config.account;if(!token){token=env.CLOUDFLARE_API_TOKEN;account=env.CLOUDFLARE_ACCOUNT_ID;}if(!/^[a-fA-F0-9]{32}$/.test(account||''))throw Error('Cloudflare Account ID 无效');endpoint='https://api.cloudflare.com/client/v4/accounts/'+account+'/ai/run/@cf/cloudflare/'+model;}
  else{if(typeof model!=='string'||!model.trim()||model.length>100)throw Error('请填写 System One 模型名');const u=new URL(config.endpoint);if(u.protocol!=='https:'||u.username||u.password||u.port||!u.hostname.includes('.')||/^[\d.]+$/.test(u.hostname)||u.hostname.includes(':')||/(^|\.)(localhost|local|internal|test|invalid)$/.test(u.hostname))throw Error('请输入公网 HTTPS System One 接口');endpoint=u.href;}
  if(typeof token!=='string'||!token.trim())throw Error('缺少该提供商的 Token；Cloudflare 服务端密钥不会发送给其他提供商');
- const input=modelInput(task,model),start=Date.now();const upstream=await fetch(endpoint,{method:'POST',headers:{'content-type':'application/json','authorization':'Bearer '+token},body:JSON.stringify(input),signal:AbortSignal.timeout(60000),redirect:'error'});
- if(!upstream.ok)return json({error:'决策接口 HTTP '+upstream.status+'；请检查模型权限、配额和接口地址。'},502);
- const data=await upstream.json();if(data.success===false)throw Error('Cloudflare 拒绝请求，请检查模型可用性和权限');const result=config.type==='cloudflare'?data.result:data;
+ const input=modelInput(task,model),start=Date.now();const upstream=await fetch(endpoint,{method:'POST',headers:{'content-type':'application/json','authorization':'Bearer '+token},body:JSON.stringify(input),signal:AbortSignal.timeout(60000),redirect:'manual'});
+ if(upstream.status>=300&&upstream.status<400)return json({error:'决策接口返回重定向（HTTP '+upstream.status+'）。请配置最终接口地址；为避免泄漏凭据，不跟随重定向。',code:'UPSTREAM_REDIRECT',upstreamStatus:upstream.status},502);
+ const text=await upstream.text();let data;try{data=JSON.parse(text);}catch{return json({error:'决策接口返回非 JSON 响应（HTTP '+upstream.status+'）。请检查接口地址、代理或登录拦截。',code:'UPSTREAM_INVALID_RESPONSE',upstreamStatus:upstream.status},502);}
+ if(!upstream.ok||data.success===false){const hints={401:'Token 无效或已过期',403:'账号或 Workers AI 权限不足',429:'调用频率或配额限制，请稍后重试'};const errors=Array.isArray(data.errors)?data.errors:[];const codes=errors.map(e=>e.code).filter(c=>typeof c==='number'||/^[A-Z0-9_-]{1,40}$/i.test(String(c)));let detail=errors.map(e=>String(e.message||'')).join('；').slice(0,500);detail=detail.split(token).join('[REDACTED]').replace(/(?:cfat_|Bearer )[A-Za-z0-9_.-]+/g,'[REDACTED]');return json({error:'决策接口 HTTP '+upstream.status+'：'+(hints[upstream.status]||'提供商拒绝请求')+(detail?'。'+detail:''),code:'UPSTREAM_REJECTED',upstreamStatus:upstream.status,providerCodes:codes},502);}
+ const result=config.type==='cloudflare'?data.result:data;
  if(!result?.answers)throw Error('未返回 System One answers；不能使用 chat/completions 接口');
  return json({raw:JSON.stringify(result,null,2),response:result,latency:Date.now()-start,usage:result.usage||null,model:result.model||model});
- }catch(e){return json({error:e.name==='TimeoutError'?'决策接口超时（60 秒）':String(e.message).slice(0,250)},400);}
+ }catch(e){if(e.name==='TimeoutError')return json({error:'决策接口超时（60 秒），可重试未完成项。',code:'UPSTREAM_TIMEOUT'},504);if(e.message==='fetch failed')return json({error:'无法连接决策接口，请检查网络、代理和 DNS。',code:'UPSTREAM_NETWORK'},502);return json({error:String(e.message).slice(0,250),code:'INVALID_REQUEST'},400);}
 }

@@ -8,3 +8,24 @@ test('uniform baseline uses no labels, no accepted items yields null risk',()=>{
 test('failed calls count as wrong, do not fabricate probability metrics',()=>{const m=summarize([{task:seeds[0],status:'error'}]);assert.equal(m.accuracy,0);assert.equal(m.valid,0);assert.equal(m.brier,null);assert.equal(m.ece,null);});
 test('CLEF request uses correct native model and server secrets',async()=>{const old=globalThis.fetch;let sent;try{globalThis.fetch=async(url,init)=>{assert.ok(url.endsWith('/@cf/cloudflare/clef'));sent=JSON.parse(init.body);assert.equal(init.headers.authorization,'Bearer secret');return Response.json({success:true,result:demo(seeds[0],'oracle')});};const r=await worker.fetch(new Request('http://localhost/api/infer',{method:'POST',body:JSON.stringify({config:{type:'cloudflare',model:'clef'},task:seeds[0]})}),{CLOUDFLARE_API_TOKEN:'secret',CLOUDFLARE_ACCOUNT_ID:'0'.repeat(32)},{});assert.equal(r.status,200);const data=await r.json();assert.equal(grade(seeds[0],data.response).score,100);assert.equal(sent.model,'clef');assert.equal(sent.messages,undefined);assert.equal(sent.expected,undefined);assert.ok(!JSON.stringify(data).includes('secret'));}finally{globalThis.fetch=old;}});
 test('chat models, cross-origin, and credential fallback to Jev are rejected',async()=>{const req=config=>new Request('http://localhost/api/infer',{method:'POST',body:JSON.stringify({config,task:seeds[0]})});const env={CLOUDFLARE_API_TOKEN:'secret',CLOUDFLARE_ACCOUNT_ID:'0'.repeat(32)};assert.equal((await worker.fetch(req({type:'cloudflare',model:'llama'}),env,{})).status,400);assert.equal((await worker.fetch(req({type:'jev',model:'jev',endpoint:'https://api.typesafe.ai/v1/systemone'}),env,{})).status,400);assert.equal((await worker.fetch(new Request('http://localhost/api/infer',{method:'POST',headers:{origin:'https://evil.example'},body:'{}'}),env,{})).status,403);});
+
+test('upstream failures expose diagnostic codes without exposing credentials',async()=>{
+ const old=globalThis.fetch;
+ try {
+  globalThis.fetch=async()=>Response.json({success:false,errors:[{code:10000,message:'Invalid secret-token'}]},{status:403});
+  const response=await worker.fetch(new Request('http://localhost/api/infer',{method:'POST',body:JSON.stringify({config:{type:'cloudflare',model:'clef'},task:seeds[0]})}),{CLOUDFLARE_API_TOKEN:'secret-token',CLOUDFLARE_ACCOUNT_ID:'0'.repeat(32)},{});
+  const data=await response.json();assert.equal(response.status,502);assert.equal(data.code,'UPSTREAM_REJECTED');assert.equal(data.upstreamStatus,403);assert.deepEqual(data.providerCodes,[10000]);assert.ok(!JSON.stringify(data).includes('secret-token'));
+  globalThis.fetch=async()=>new Response('<html>Sign in</html>',{status:200});
+  const html=await worker.fetch(new Request('http://localhost/api/infer',{method:'POST',body:JSON.stringify({config:{type:'cloudflare',model:'clef'},task:seeds[0]})}),{CLOUDFLARE_API_TOKEN:'secret-token',CLOUDFLARE_ACCOUNT_ID:'0'.repeat(32)},{});
+  assert.equal((await html.json()).code,'UPSTREAM_INVALID_RESPONSE');
+ } finally {globalThis.fetch=old;}
+});
+
+test('edge-compatible manual redirects never forward credentials',async()=>{
+ const old=globalThis.fetch;let count=0;
+ try {
+  globalThis.fetch=async(url,init)=>{count++;assert.equal(init.redirect,'manual');return new Response(null,{status:302,headers:{location:'https://untrusted.example/collect'}});};
+  const response=await worker.fetch(new Request('http://localhost/api/infer',{method:'POST',body:JSON.stringify({config:{type:'cloudflare',model:'clef'},task:seeds[0]})}),{CLOUDFLARE_API_TOKEN:'secret-token',CLOUDFLARE_ACCOUNT_ID:'0'.repeat(32)},{});
+  const data=await response.json();assert.equal(response.status,502);assert.equal(data.code,'UPSTREAM_REDIRECT');assert.equal(count,1);assert.ok(!JSON.stringify(data).includes('secret-token'));assert.ok(!JSON.stringify(data).includes('untrusted.example'));
+ } finally {globalThis.fetch=old;}
+});
