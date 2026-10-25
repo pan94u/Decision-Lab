@@ -6,10 +6,13 @@
 
 ```sh
 cd /Users/pan9/code/DM-eval/decision-lab
+npm run setup  # 一次性配置 Account ID / Token；输入 Token 不回显
 npm run dev
 ```
 
-打开 http://localhost:4173 。真实模型需服务端环境变量 `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID`，或在页面配置临时 Token。线上密钥保存在 Sites secrets 中，不在源码、任务记录和 localStorage 内。切换其他服务商不会复用 Cloudflare 凭据。
+需要 Node.js 22 或更新版本，无需安装 npm 依赖。
+
+打开 http://localhost:4173 。启动时自动读取项目根目录 `.env`，终端只显示是否配置成功，不输出密钥。`.env` 已加入 Git 忽略规则，setup 设置文件权限为 0600。也支持服务端环境变量 `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID`，或在页面配置临时 Token。线上密钥保存在 Sites secrets 中，不在源码、任务记录和 localStorage 内。切换其他服务商不会复用 Cloudflare 凭据。
 
 ```sh
 npm run build

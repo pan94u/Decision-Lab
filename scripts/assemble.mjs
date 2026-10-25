@@ -1,4 +1,4 @@
-import {readFile,writeFile} from 'node:fs/promises';
+import {readFile,writeFile,mkdir} from 'node:fs/promises';
 const read=p=>readFile(new URL('../'+p,import.meta.url),'utf8');
 const engine=(await read('src/engine.js')).replaceAll('export ','');
 const seeds=(await read('src/seeds.js')).replaceAll('export ','');
@@ -6,5 +6,6 @@ const initial=await read('src/initial-runs.json');
 const app=engine+'\n'+seeds+'\nconst initialRuns='+initial+';\n'+await read('src/app.js');
 const page=await read('src/page.html');
 const server=(await read('src/server.js')).replaceAll('export ','');
+await mkdir(new URL('../worker/',import.meta.url),{recursive:true});
 await writeFile(new URL('../worker/index.js',import.meta.url),engine+'\n'+server+'\nconst page='+JSON.stringify(page)+';\nconst app='+JSON.stringify(app)+';\nexport default { async fetch(request,env,ctx){const path=new URL(request.url).pathname; if(path.startsWith("/api/"))return handle(request,env); if(path==="/app.js")return new Response(app,{headers:{"content-type":"text/javascript; charset=utf-8","cache-control":"no-cache"}});if(path!=="/")return new Response("Not found",{status:404});return new Response(page,{headers:{"content-type":"text/html; charset=utf-8","x-content-type-options":"nosniff","referrer-policy":"same-origin","cache-control":"no-cache"}});}};\n');
 console.log('Assembled standalone Worker');
