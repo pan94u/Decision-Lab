@@ -1,6 +1,6 @@
 import {readFile,writeFile,mkdir} from 'node:fs/promises';
 const read=p=>readFile(new URL('../'+p,import.meta.url),'utf8');
-const engine=(await read('src/engine.js')).replaceAll('export ','');
+const engine=(await read('src/domain/decision.mjs')).replaceAll('export ','');
 const seeds=(await read('src/seeds.js')).replaceAll('export ','');
 const initial=await read('src/initial-runs.json');
 const app=engine+'\n'+seeds+'\nconst initialRuns='+initial+';\n'+await read('src/app.js');
