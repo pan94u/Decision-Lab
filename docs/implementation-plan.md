@@ -50,6 +50,7 @@
 - 状态：首个基底验证切口已完成，通过内部 CLI 驱动，尚未接入页面或后台队列。
 - 证据：`npm test` 17 项通过；`npm run build` 与 `npm run validate` 通过。`npm run benchmark:verify` 使用 72 个真实源样例展开 754 次受控执行，与固定参考实现核对 754 个整题结果、900 个判据结果及 16 个概率值，差异为 0；详见 [结果摘要](../benchmarks/verification-summary.json) 和 [源版本清单](../benchmarks/sources.json)。原始数据、SQLite 和完整记录位于 Git 忽略的 `artifacts/benchmark-verification/`。
 - 边界：MMLU 仅四题且传输被替换；CLINC 仅六个源样例，使用公开标签与 sklearn 参考聚合；IFEval 仅四类判据覆盖的 62 个样例及受控响应变体。以上验证平台契约，不评价模型能力或证明全量官方复现；BFCL/BEIR/τ-bench、后台恢复调度、用户数据迁移和权限系统尚未实现。SQLite 仅在 Node 24.14.1 / SQLite 3.51.2 的当前单机环境验证，内置模块仍有实验性警告。
+- 真实模型验证：CLEF 已通过新持久链路完成 10 个实际请求，MMLU 4 题正确 3 题，CLINC 6 条全对（含 3 条 OOS）；原文、概率和 usage 已落盘并重开读取。派生协议和小样本范围见 [实测摘要](../benchmarks/clef-live-summary.json)，IFEval 未运行。
 - 后续入口：在上述链路之上增加持久调度，不重做任务、执行和证据模型。
 
 ## 3. 后续切口候选

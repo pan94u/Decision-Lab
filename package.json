@@ -11,7 +11,8 @@
     "test:live": "node scripts/live-check.mjs",
     "benchmark:fetch": "python3 scripts/benchmarks/fetch.py",
     "benchmark:verify": ".cache/benchmarks/venv/bin/python scripts/benchmarks/verify.py",
-    "benchmark:setup": "node scripts/benchmarks/setup.mjs"
+    "benchmark:setup": "node scripts/benchmarks/setup.mjs",
+    "benchmark:clef": "node scripts/benchmarks/run-clef.mjs && node scripts/benchmarks/render-clef-report.mjs"
   },
   "engines": {
     "node": ">=24.14.1"

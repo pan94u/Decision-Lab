@@ -42,6 +42,12 @@ MMLU 仅验证 4 个 abstract_algebra 测试样例及 5 个开发集示例；CLI
 
 支持从服务端保存的响应重新评价，保留旧评价；版本指纹、事务、幂等、项目范围检查和证据一致性均有自动测试。当前不包含完整权限系统、自动恢复队列或生产门禁，不能据此宣称平台已达到生产标准。
 
+### CLEF 真实调用
+
+配置好本机 `.env` 后运行 `npm run benchmark:clef`，使用上述固定样例分别评测 MMLU 与 CLINC，共最多 10 个真实请求，产生提供商 API 用量，无自动重试。该命令需要先运行过 `benchmark:verify` 生成固定输入；它不读取受控答案来生成模型输出。
+
+报告位于 `artifacts/clef-benchmark/report.md`，原始请求/响应与 SQLite 同目录保存；脱敏摘要见 [benchmarks/clef-live-summary.json](benchmarks/clef-live-summary.json)。MMLU 使用派生原生 choice 协议，CLINC 保留完整 151 标签空间，IFEval 不运行。当前耗时口径为请求开始至响应头到达，不含正文读取。小样本不能外推完整 benchmark 表现。
+
 ## 模型协议
 
 - Cloudflare：`@cf/cloudflare/clef` / `@cf/cloudflare/clef-flash`。

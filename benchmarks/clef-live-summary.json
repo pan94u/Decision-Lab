@@ -1,0 +1,327 @@
+{
+  "purpose": "Live CLEF benchmark subset; derived protocols, not official full benchmark scores",
+  "startedAt": "2026-11-01T06:41:24.145Z",
+  "model": "clef",
+  "requestsSent": 10,
+  "stoppedEarly": false,
+  "latencyMeasurement": "request start to response headers; excludes body read",
+  "inputTokens": 20806,
+  "skipped": [
+    {
+      "benchmark": "IFEval",
+      "reason": "CLEF cannot natively generate the free-form responses required by the benchmark."
+    }
+  ],
+  "reports": [
+    {
+      "benchmark": "mmlu",
+      "experimentId": "c0ce52ff-b483-45d1-bc72-737b239b036b",
+      "planHash": "7c751aa4abf46e25e2f206655a02330da9700790644d987210cde21cb0d61794",
+      "protocol": {
+        "id": "clef-native-mmlu-subset",
+        "revision": "1",
+        "mode": "derived",
+        "sourceManifestSha256": "bd5ebc9d165cd44989eec02a82e392327b2e6cc0815527e3568344f4fe2824ce",
+        "sourceRevisions": [
+          "c30699e8356da336a370243923dbaf21066bb9fe"
+        ],
+        "caseSelection": [
+          "abstract_algebra/test/0",
+          "abstract_algebra/test/1",
+          "abstract_algebra/test/2",
+          "abstract_algebra/test/3"
+        ],
+        "responseSource": "live Cloudflare CLEF native decision API",
+        "candidateOrder": "preserved from pinned case inputs",
+        "repeats": 1,
+        "adaptation": "Keep original five-shot prompt and repeat final candidates in a native choice schema; not original token-logprob protocol.",
+        "limits": {
+          "maxRequests": 10,
+          "timeoutMs": 60000,
+          "automaticRetries": 0
+        }
+      },
+      "metrics": {
+        "plannedCases": 4,
+        "completedRequests": 4,
+        "validAnswers": 4,
+        "correct": 3,
+        "endToEndAccuracy": 0.75,
+        "validAnswerAccuracy": 0.75,
+        "macroF1ObservedLabels": 0.5555555555555555,
+        "normalizedBrier": 0.10146391000000002,
+        "nll": 0.3649777251562703,
+        "averageLatencyMs": 912.25,
+        "providerUsage": [
+          {
+            "input_tokens": 518,
+            "output_tokens": 0
+          },
+          {
+            "input_tokens": 536,
+            "output_tokens": 0
+          },
+          {
+            "input_tokens": 540,
+            "output_tokens": 0
+          },
+          {
+            "input_tokens": 555,
+            "output_tokens": 0
+          }
+        ]
+      },
+      "details": [
+        {
+          "caseId": "mmlu:abstract_algebra:test:0",
+          "source": {
+            "revision": "c30699e8356da336a370243923dbaf21066bb9fe",
+            "itemId": "abstract_algebra/test/0",
+            "split": "test"
+          },
+          "expected": "B",
+          "predicted": "B",
+          "correct": true,
+          "state": "succeeded",
+          "probabilityOfExpected": 0.925,
+          "selectedProbability": 0.925,
+          "apiConfidence": 0.8124,
+          "httpStatus": 200,
+          "error": null
+        },
+        {
+          "caseId": "mmlu:abstract_algebra:test:1",
+          "source": {
+            "revision": "c30699e8356da336a370243923dbaf21066bb9fe",
+            "itemId": "abstract_algebra/test/1",
+            "split": "test"
+          },
+          "expected": "C",
+          "predicted": "C",
+          "correct": true,
+          "state": "succeeded",
+          "probabilityOfExpected": 0.7781,
+          "selectedProbability": 0.7781,
+          "apiConfidence": 0.5233,
+          "httpStatus": 200,
+          "error": null
+        },
+        {
+          "caseId": "mmlu:abstract_algebra:test:2",
+          "source": {
+            "revision": "c30699e8356da336a370243923dbaf21066bb9fe",
+            "itemId": "abstract_algebra/test/2",
+            "split": "test"
+          },
+          "expected": "D",
+          "predicted": "C",
+          "correct": false,
+          "state": "succeeded",
+          "probabilityOfExpected": 0.3559,
+          "selectedProbability": 0.5292,
+          "apiConfidence": 0.2208,
+          "httpStatus": 200,
+          "error": null
+        },
+        {
+          "caseId": "mmlu:abstract_algebra:test:3",
+          "source": {
+            "revision": "c30699e8356da336a370243923dbaf21066bb9fe",
+            "itemId": "abstract_algebra/test/3",
+            "split": "test"
+          },
+          "expected": "B",
+          "predicted": "B",
+          "correct": true,
+          "state": "succeeded",
+          "probabilityOfExpected": 0.9067,
+          "selectedProbability": 0.9067,
+          "apiConfidence": 0.7675,
+          "httpStatus": 200,
+          "error": null
+        }
+      ]
+    },
+    {
+      "benchmark": "clinc",
+      "experimentId": "811e59ef-ef58-46f3-9ed5-fa25af1fbdc8",
+      "planHash": "c6c5c7ff560c382c0f4f5649ca2ef62a7901ea1b3f1fb38c1d3ee39cfc0cd625",
+      "protocol": {
+        "id": "clef-native-clinc-subset",
+        "revision": "1",
+        "mode": "derived",
+        "sourceManifestSha256": "bd5ebc9d165cd44989eec02a82e392327b2e6cc0815527e3568344f4fe2824ce",
+        "sourceRevisions": [
+          "828f8093932c8fe6ca7936c3d2e52903b1c523de"
+        ],
+        "caseSelection": [
+          "test/0",
+          "test/30",
+          "test/60",
+          "oos_test/0",
+          "oos_test/1",
+          "oos_test/2"
+        ],
+        "responseSource": "live Cloudflare CLEF native decision API",
+        "candidateOrder": "preserved from pinned case inputs",
+        "repeats": 1,
+        "adaptation": "Use full 150 supported intent names plus oos; humanize names, no label subset or oracle shortlist.",
+        "limits": {
+          "maxRequests": 10,
+          "timeoutMs": 60000,
+          "automaticRetries": 0
+        }
+      },
+      "metrics": {
+        "plannedCases": 6,
+        "completedRequests": 6,
+        "validAnswers": 6,
+        "correct": 6,
+        "endToEndAccuracy": 1,
+        "validAnswerAccuracy": 1,
+        "macroF1ObservedLabels": 1,
+        "normalizedBrier": 0.0018130849999999819,
+        "nll": 0.06027363292083582,
+        "averageLatencyMs": 769.6666666666666,
+        "providerUsage": [
+          {
+            "input_tokens": 3106,
+            "output_tokens": 0
+          },
+          {
+            "input_tokens": 3113,
+            "output_tokens": 0
+          },
+          {
+            "input_tokens": 3113,
+            "output_tokens": 0
+          },
+          {
+            "input_tokens": 3106,
+            "output_tokens": 0
+          },
+          {
+            "input_tokens": 3114,
+            "output_tokens": 0
+          },
+          {
+            "input_tokens": 3105,
+            "output_tokens": 0
+          }
+        ],
+        "oosRecall": 1,
+        "inScopeAccuracy": 1
+      },
+      "details": [
+        {
+          "caseId": "clinc:oos_test/0",
+          "source": {
+            "revision": "828f8093932c8fe6ca7936c3d2e52903b1c523de",
+            "itemId": "oos_test/0",
+            "split": "oos_test"
+          },
+          "expected": "oos",
+          "predicted": "oos",
+          "correct": true,
+          "state": "succeeded",
+          "probabilityOfExpected": 0.9366000000000001,
+          "selectedProbability": 0.9366000000000001,
+          "apiConfidence": 0.8764,
+          "httpStatus": 200,
+          "error": null
+        },
+        {
+          "caseId": "clinc:oos_test/1",
+          "source": {
+            "revision": "828f8093932c8fe6ca7936c3d2e52903b1c523de",
+            "itemId": "oos_test/1",
+            "split": "oos_test"
+          },
+          "expected": "oos",
+          "predicted": "oos",
+          "correct": true,
+          "state": "succeeded",
+          "probabilityOfExpected": 0.9230000000000002,
+          "selectedProbability": 0.9230000000000002,
+          "apiConfidence": 0.8511,
+          "httpStatus": 200,
+          "error": null
+        },
+        {
+          "caseId": "clinc:oos_test/2",
+          "source": {
+            "revision": "828f8093932c8fe6ca7936c3d2e52903b1c523de",
+            "itemId": "oos_test/2",
+            "split": "oos_test"
+          },
+          "expected": "oos",
+          "predicted": "oos",
+          "correct": true,
+          "state": "succeeded",
+          "probabilityOfExpected": 0.935,
+          "selectedProbability": 0.935,
+          "apiConfidence": 0.8734,
+          "httpStatus": 200,
+          "error": null
+        },
+        {
+          "caseId": "clinc:test/0",
+          "source": {
+            "revision": "828f8093932c8fe6ca7936c3d2e52903b1c523de",
+            "itemId": "test/0",
+            "split": "test"
+          },
+          "expected": "translate",
+          "predicted": "translate",
+          "correct": true,
+          "state": "succeeded",
+          "probabilityOfExpected": 0.9439000000000005,
+          "selectedProbability": 0.9439000000000005,
+          "apiConfidence": 0.8904,
+          "httpStatus": 200,
+          "error": null
+        },
+        {
+          "caseId": "clinc:test/30",
+          "source": {
+            "revision": "828f8093932c8fe6ca7936c3d2e52903b1c523de",
+            "itemId": "test/30",
+            "split": "test"
+          },
+          "expected": "transfer",
+          "predicted": "transfer",
+          "correct": true,
+          "state": "succeeded",
+          "probabilityOfExpected": 0.9609000000000005,
+          "selectedProbability": 0.9609000000000005,
+          "apiConfidence": 0.9228,
+          "httpStatus": 200,
+          "error": null
+        },
+        {
+          "caseId": "clinc:test/60",
+          "source": {
+            "revision": "828f8093932c8fe6ca7936c3d2e52903b1c523de",
+            "itemId": "test/60",
+            "split": "test"
+          },
+          "expected": "timer",
+          "predicted": "timer",
+          "correct": true,
+          "state": "succeeded",
+          "probabilityOfExpected": 0.9501000000000007,
+          "selectedProbability": 0.9501000000000007,
+          "apiConfidence": 0.9021,
+          "httpStatus": 200,
+          "error": null
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "Deterministic small subsets; not official full benchmark scores.",
+    "MMLU native choice probabilities are not the original token-logprob scoring protocol.",
+    "CLINC uses all 151 labels but only 6 source examples.",
+    "IFEval generation was not run."
+  ]
+}
