@@ -1,0 +1,74 @@
+{
+  "purpose": "Architecture conformance, NOT model capability or full official benchmark reproduction",
+  "status": "passed",
+  "generatedAt": "20261101T055450645485Z",
+  "sourceManifestSha256": "bd5ebc9d165cd44989eec02a82e392327b2e6cc0815527e3568344f4fe2824ce",
+  "platformImplementation": {
+    "src/domain/benchmark.mjs": "49abe8792e8f5e5c75286c3e2d390d3bacf8527cd3976154c115971277cdb25a",
+    "src/server/storage/experiment-store.mjs": "dfdc2e91cafcf9a95fa78bad7bad0d27ec841c36c589fe5763189791e0e08c36",
+    "scripts/benchmarks/verify.py": "3d46ad17b1d0bccb0d66f4e340278ca9f90865eaed11ddc943d4cc177b8ee246",
+    "scripts/benchmarks/run-packets.mjs": "466a898c8a94799b52ab531df20f3e372e3216566b55d13be9164dd04f74025f"
+  },
+  "coverage": {
+    "mmlu": {
+      "uniqueSourceCases": 4,
+      "expectedControlledAccuracy": 0.5,
+      "reference": "pinned upstream eval(), candidate argmax and softmax"
+    },
+    "clinc": {
+      "uniqueSourceCases": 6,
+      "labelCount": 151,
+      "inScope": 3,
+      "outOfScope": 3,
+      "reference": "published labels + sklearn metrics",
+      "expectedControlledAccuracy": 0.3333333333333333,
+      "expectedConditionalMacroF1": 0.41666666666666663
+    },
+    "ifeval": {
+      "uniqueSourceCases": 62,
+      "multiCriterionCases": 13,
+      "totalSourceCases": 541,
+      "supportedCriteria": [
+        "detectable_format:json_format",
+        "keywords:existence",
+        "keywords:forbidden_words",
+        "startend:quotation"
+      ],
+      "reference": "unmodified pinned evaluation_lib strict + loose, with controlled responses",
+      "semanticAnswerQuality": "not assessed by this conformance test"
+    }
+  },
+  "checks": {
+    "caseComparisons": 754,
+    "criterionComparisons": 900,
+    "probabilityComparisons": 16,
+    "mismatches": [],
+    "createdExperiments": 4,
+    "adapterCallsBeforeRescore": 754,
+    "adapterCallsAfterRescore": 754,
+    "processRestartReadback": true,
+    "rescoringAddedRevisions": true
+  },
+  "findings": [
+    {
+      "id": "legacy-151-label-cap",
+      "reproducedError": "q 需要 2–50 个命名 criteria",
+      "resolution": "Generic task contract supports declared label spaces; API-specific limits remain adapter concerns"
+    },
+    {
+      "id": "strict-loose-and-criterion",
+      "resolution": "Variant and criterion/case levels persisted independently"
+    },
+    {
+      "id": "trial-vs-invocation",
+      "resolution": "Execution and Invocation have separate identities; core tests include a two-invocation trial"
+    }
+  ],
+  "limitations": [
+    "Controlled stimuli do not measure model skill or semantic answer quality.",
+    "MMLU: four abstract_algebra test cases, five dev demonstrations; unchanged AST-selected eval function with mocked transport and identity crop, no context-truncation or live API verification.",
+    "CLINC: six source samples and full 151-label space; label match and sklearn reference aggregation, not full original-model reproduction.",
+    "IFEval: all source rows covered by four criteria; other criteria and Unicode/JSON edge conformance outside observed stimuli are not certified.",
+    "Only a local synchronous execution slice is implemented; background leases/recovery scheduling, UI integration, RBAC and production gates remain pending."
+  ]
+}

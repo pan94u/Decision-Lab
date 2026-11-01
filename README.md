@@ -14,7 +14,7 @@ npm run setup  # 一次性配置 Account ID / Token；输入 Token 不回显
 npm run dev
 ```
 
-需要 Node.js 22 或更新版本，无需安装 npm 依赖。
+需要 Node.js 24.14.1 或更新版本（本轮验证环境为 24.14.1），无需安装 npm 依赖。新增持久化切口使用内置 node:sqlite；该环境中此模块仍有 ExperimentalWarning，当前仅声明所测单机范围。
 
 打开 http://localhost:4173 。启动时自动读取项目根目录 `.env`，终端只显示是否配置成功，不输出密钥。`.env` 已加入 Git 忽略规则，setup 设置文件权限为 0600。也支持服务端环境变量 `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID`，或在页面配置临时 Token。线上密钥保存在 Sites secrets 中，不在源码、任务记录和 localStorage 内。切换其他服务商不会复用 Cloudflare 凭据。
 
@@ -23,6 +23,24 @@ npm run build
 npm test
 npm run validate
 ```
+
+## 公开基准契约验证
+
+第一条服务端持久化切口通过 CLI 驱动，目前未接入页面，也没有后台调度。现有页面仍使用后文描述的浏览器数据模式。
+
+```sh
+npm run benchmark:setup   # 独立 Python 环境；用于运行参考评价器，不是平台运行依赖
+npm run benchmark:fetch   # 下载固定 revision 的公开样例/源码并检查 SHA-256
+npm run benchmark:verify  # 不需要 Key，不调用任何付费模型
+```
+
+Python 依赖在 [benchmarks/requirements.txt](benchmarks/requirements.txt)，源码/数据 revision、来源、许可和文件校验和在 [benchmarks/sources.json](benchmarks/sources.json)。验证使用原始样例与受控响应：MMLU 的原始评分函数通过 AST 提取执行，替换网络传输并对短提示禁用裁剪；CLINC 使用原始标签和 sklearn 独立聚合；IFEval 直接执行固定版本的 strict/loose 原始评价器。
+
+每次运行创建独立 SQLite 文件，完整输入、响应、逐项评价及新进程读取结果保存在 `artifacts/benchmark-verification/`（Git 忽略）。轻量结果摘要见 [benchmarks/verification-summary.json](benchmarks/verification-summary.json)。受控响应刻意包含正确、错误和无效结果，摘要中的分数用于验证评价器一致性，不是模型能力成绩，也不是完整官方 benchmark 复现。
+
+MMLU 仅验证 4 个 abstract_algebra 测试样例及 5 个开发集示例；CLINC 验证 6 个源样例与完整 151 标签空间；IFEval 验证四类判据能覆盖的源样例及响应变体，其他判据、Unicode/JSON 边界和语义回答质量尚未认证。BFCL、BEIR 和 τ-bench 尚未接入验证。
+
+支持从服务端保存的响应重新评价，保留旧评价；版本指纹、事务、幂等、项目范围检查和证据一致性均有自动测试。当前不包含完整权限系统、自动恢复队列或生产门禁，不能据此宣称平台已达到生产标准。
 
 ## 模型协议
 

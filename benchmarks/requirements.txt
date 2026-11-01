@@ -1,0 +1,9 @@
+# Only needed to compare against pinned upstream Python evaluators.
+absl-py==2.3.1
+langdetect==1.0.9
+nltk==3.9.2
+immutabledict==4.2.2
+numpy==2.0.2
+pandas==2.3.3
+fastparquet==2024.11.0
+scikit-learn==1.6.1

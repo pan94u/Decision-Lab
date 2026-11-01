@@ -1,0 +1,117 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Architecture verification with controlled responses, not model capability scores",
+  "sources": [
+    {
+      "id": "mmlu",
+      "repository": "https://github.com/hendrycks/test",
+      "revision": "4450500f923c49f1fb1dd3d99108a0bd9717b660",
+      "files": [
+        {
+          "path": "evaluate.py",
+          "url": "https://raw.githubusercontent.com/hendrycks/test/4450500f923c49f1fb1dd3d99108a0bd9717b660/evaluate.py",
+          "sha256": "8b7d84e5a2e9290df0d43d1c060aa68ecb638c4666415b3a58d709c18eace4ec"
+        },
+        {
+          "path": "LICENSE",
+          "url": "https://raw.githubusercontent.com/hendrycks/test/4450500f923c49f1fb1dd3d99108a0bd9717b660/LICENSE",
+          "sha256": "5d841b9eee8bf0d721359b79fbae956a8b426d3139bfefee32149c7d4f2a1a9c"
+        }
+      ],
+      "license": "MIT",
+      "attribution": "Dan Hendrycks et al., Measuring Massive Multitask Language Understanding"
+    },
+    {
+      "id": "clinc",
+      "repository": "https://github.com/clinc/oos-eval",
+      "revision": "828f8093932c8fe6ca7936c3d2e52903b1c523de",
+      "files": [
+        {
+          "path": "README.md",
+          "url": "https://raw.githubusercontent.com/clinc/oos-eval/828f8093932c8fe6ca7936c3d2e52903b1c523de/README.md",
+          "sha256": "8a8df26c4de3d25b6c4cff385ca23602c30e4e56828b015206cbc202f6db363a"
+        },
+        {
+          "path": "LICENSE",
+          "url": "https://raw.githubusercontent.com/clinc/oos-eval/828f8093932c8fe6ca7936c3d2e52903b1c523de/LICENSE",
+          "sha256": "e6bc9e9c474700b708f568bac9e5a8a9bcb2b1dad53442f5ba449fcb848b8e76"
+        },
+        {
+          "path": "data/data_full.json",
+          "url": "https://raw.githubusercontent.com/clinc/oos-eval/828f8093932c8fe6ca7936c3d2e52903b1c523de/data/data_full.json",
+          "sha256": "36923c3705a59e08fe9c3883d8bc2dd966ef93e22cb78ac41171782a698d56e0"
+        }
+      ],
+      "license": "CC-BY-3.0",
+      "attribution": "Stefan Larson et al., An Evaluation Dataset for Intent Classification and Out-of-Scope Prediction"
+    },
+    {
+      "id": "ifeval",
+      "repository": "https://github.com/google-research/google-research",
+      "revision": "83f1e7b59e762648c953de751d31f75720683622",
+      "files": [
+        {
+          "path": "LICENSE",
+          "url": "https://raw.githubusercontent.com/google-research/google-research/83f1e7b59e762648c953de751d31f75720683622/LICENSE",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+        },
+        {
+          "path": "instruction_following_eval/README.md",
+          "url": "https://raw.githubusercontent.com/google-research/google-research/83f1e7b59e762648c953de751d31f75720683622/instruction_following_eval/README.md",
+          "sha256": "fef3c44408e4b39837af345095ccce7da798853fd60ea94a1de63afa9d3d67b3"
+        },
+        {
+          "path": "instruction_following_eval/evaluation_lib.py",
+          "url": "https://raw.githubusercontent.com/google-research/google-research/83f1e7b59e762648c953de751d31f75720683622/instruction_following_eval/evaluation_lib.py",
+          "sha256": "35decc06000718487f44d7deafa6d3f48a8ec0886281edf40162c0265b7d248c"
+        },
+        {
+          "path": "instruction_following_eval/instructions.py",
+          "url": "https://raw.githubusercontent.com/google-research/google-research/83f1e7b59e762648c953de751d31f75720683622/instruction_following_eval/instructions.py",
+          "sha256": "60e086f5342a03ce8e18b64bbcccf86308f523c08aa826707a562150a52f3edf"
+        },
+        {
+          "path": "instruction_following_eval/instructions_util.py",
+          "url": "https://raw.githubusercontent.com/google-research/google-research/83f1e7b59e762648c953de751d31f75720683622/instruction_following_eval/instructions_util.py",
+          "sha256": "a73797261eee5bf447e279d82a2b700b1bdd3cb1193412dbab1270a85832bc6b"
+        },
+        {
+          "path": "instruction_following_eval/instructions_registry.py",
+          "url": "https://raw.githubusercontent.com/google-research/google-research/83f1e7b59e762648c953de751d31f75720683622/instruction_following_eval/instructions_registry.py",
+          "sha256": "ec92d72c264f6d906978613085db262356174300370a3fffe6fefd5969ce9cfc"
+        },
+        {
+          "path": "instruction_following_eval/data/input_data.jsonl",
+          "url": "https://raw.githubusercontent.com/google-research/google-research/83f1e7b59e762648c953de751d31f75720683622/instruction_following_eval/data/input_data.jsonl",
+          "sha256": "67ffeee0fcb87c317c5b08a2de85557b4a7e96ada6178aa645b4954fe4b53d49"
+        }
+      ],
+      "license": "Apache-2.0",
+      "attribution": "Google Research, Instruction-Following Evaluation for Large Language Models"
+    },
+    {
+      "id": "mmlu-data",
+      "repository": "https://huggingface.co/datasets/cais/mmlu",
+      "revision": "c30699e8356da336a370243923dbaf21066bb9fe",
+      "license": "MIT (dataset card)",
+      "files": [
+        {
+          "path": "README.md",
+          "url": "https://huggingface.co/datasets/cais/mmlu/resolve/c30699e8356da336a370243923dbaf21066bb9fe/README.md",
+          "sha256": "665eef35ecd8a89037c1e4f1e1a0d7fd4c154edc04c81cea5634ace2d3e96953"
+        },
+        {
+          "path": "abstract_algebra/dev-00000-of-00001.parquet",
+          "url": "https://huggingface.co/datasets/cais/mmlu/resolve/c30699e8356da336a370243923dbaf21066bb9fe/abstract_algebra/dev-00000-of-00001.parquet",
+          "sha256": "e778f60903669e953c49f0d3c8deffa1738a81fe344e0bf1791e450a5e8b9d6c"
+        },
+        {
+          "path": "abstract_algebra/test-00000-of-00001.parquet",
+          "url": "https://huggingface.co/datasets/cais/mmlu/resolve/c30699e8356da336a370243923dbaf21066bb9fe/abstract_algebra/test-00000-of-00001.parquet",
+          "sha256": "92338cdcdb43d2871691ef9a0e125e633ca57335ed635a635fe6dead94f224c2"
+        }
+      ],
+      "attribution": "cais/mmlu mirror of the Hendrycks et al. MMLU dataset"
+    }
+  ]
+}
