@@ -11,19 +11,23 @@ const COMMANDS = {
   'plan validate': ['file', 'project'],
   'experiment create': ['file', 'project', 'idempotency-key', 'db'],
   'experiment get': ['id', 'project', 'db'],
+  'experiment cancel': ['id', 'project', 'actor', 'db'],
+  'worker run': ['project', 'db', 'once', 'allow-live', 'lease-ms', 'poll-ms'],
 };
 const USAGE = [
   'decision-lab capabilities --json',
   'decision-lab plan validate --file PLAN [--project PROJECT] --json',
   'decision-lab experiment create --file PLAN --project PROJECT --idempotency-key KEY [--db PATH] --json',
   'decision-lab experiment get --id ID --project PROJECT [--db PATH] --json',
+  'decision-lab experiment cancel --id ID --project PROJECT --actor ACTOR [--db PATH] --json',
+  'decision-lab worker run --project PROJECT [--db PATH] [--once] [--allow-live] [--lease-ms 30000] [--poll-ms 250]',
 ];
 function parse(argv) {
   let parsed;
   try {
     parsed = parseArgs({ args: argv, allowPositionals: true, tokens: true, options: {
-      json: { type: 'boolean' }, help: { type: 'boolean' },
-      ...Object.fromEntries(['file', 'project', 'id', 'idempotency-key', 'db'].map(name => [name, { type: 'string' }])),
+      json: { type: 'boolean' }, help: { type: 'boolean' }, once: { type: 'boolean' }, 'allow-live': { type: 'boolean' },
+      ...Object.fromEntries(['file', 'project', 'id', 'idempotency-key', 'db', 'actor', 'lease-ms', 'poll-ms'].map(name => [name, { type: 'string' }])),
     } });
   } catch { throw new ApplicationError('INVALID_ARGUMENTS', 'Unknown or malformed arguments. Use --help.'); }
   const seen = new Set();
@@ -56,11 +60,12 @@ function readPlan(file) {
   } finally { if (fd !== undefined) closeSync(fd); }
 }
 
-export async function runCli(argv, { environment = process.env, stdout = process.stdout } = {}) {
+export async function runCli(argv, { environment = process.env, stdout = process.stdout, stderr = process.stderr } = {}) {
   const result = { schemaVersion: 'decision-lab.result/v1', requestId: randomUUID(), data: null, error: null };
-  let exitCode = 0;
+  let exitCode = 0, workerMode = false;
   try {
     const { command, values } = parse(argv);
+    workerMode = command === 'worker run';
     if (command === 'help') result.data = { kind: 'help', usage: USAGE, output: 'JSON only; diagnostics on stderr.', contractVersion: 'decision-lab.cli/v1' };
     else if (command === 'capabilities') result.data = capabilities();
     else {
@@ -77,19 +82,45 @@ export async function runCli(argv, { environment = process.env, stdout = process
           key = required(values, 'idempotency-key');
           if (key.length > 256) throw new ApplicationError('INVALID_IDEMPOTENCY_KEY', 'Idempotency key exceeds 256 characters.');
           service.validate(plan, { projectId });
-        } else {
+        } else if (!workerMode) {
           id = required(values, 'id');
+          if (command === 'experiment cancel') required(values, 'actor');
           if (!existsSync(database)) throw new ApplicationError('NOT_FOUND', 'Experiment not found in this project.');
         }
-        const { ExperimentStore } = await import('../server/storage/experiment-store.mjs');
-        service.openStore = operation => new ExperimentStore(database, { readOnly: operation === 'get' });
-        result.data = command === 'experiment create' ? service.create(plan, { projectId, idempotencyKey: key }) : service.get(id, { projectId });
+        let leaseMs = 30000, pollMs = 250;
+        if (workerMode) {
+          const positive = (name, fallback, min, max) => {
+            const value = values[name] === undefined ? fallback : Number(values[name]);
+            if (!Number.isSafeInteger(value) || value < min || value > max) throw new ApplicationError('INVALID_ARGUMENTS', `Invalid --${name} range.`);
+            return value;
+          };
+          leaseMs = positive('lease-ms', 30000, 1000, 300000);
+          pollMs = positive('poll-ms', 250, 10, 10000);
+        }
+        const { RuntimeStore } = await import('../server/storage/runtime-store.mjs');
+        service.openStore = operation => new RuntimeStore(database, { readOnly: operation === 'get' });
+        if (workerMode) {
+          const { runWorker } = await import('../server/worker/runner.mjs');
+          const store = service.openStore('worker'), shutdown = new AbortController();
+          const stop = () => shutdown.abort();
+          process.once('SIGINT', stop); process.once('SIGTERM', stop);
+          try {
+            await runWorker({ store, projectId, environment, allowLive: !!values['allow-live'], once: !!values.once,
+              leaseMs, pollMs, signal: shutdown.signal, diagnostic: data => stderr.write(JSON.stringify(data) + '\n') });
+          } finally {
+            process.removeListener('SIGINT', stop); process.removeListener('SIGTERM', stop); store.close();
+          }
+          return 0;
+        }
+        result.data = command === 'experiment create' ? service.create(plan, { projectId, idempotencyKey: key })
+          : command === 'experiment cancel' ? service.cancel(id, { projectId, actorId: values.actor }) : service.get(id, { projectId });
       }
     }
   } catch (error) {
     const safe = publicError(error);
     result.error = { code: safe.code, message: safe.message, details: safe.details, retryable: safe.retryable };
     exitCode = safe.exitCode;
+    if (workerMode) { stderr.write(JSON.stringify({ type: 'WorkerError', ...result.error }) + '\n'); return exitCode; }
   }
   stdout.write(JSON.stringify(result) + '\n');
   return exitCode;

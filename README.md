@@ -25,14 +25,15 @@ npm test
 npm run validate
 ```
 
-## 机器入口 CLI（S001）
+## 机器入口 CLI（S001–S002）
 
-已实现能力发现、离线预检、幂等创建及按项目查询。当前只创建排队实验，尚无独立 Worker；执行、报告、Skill 与基础平台界面按实施计划逐个 session 交付。现有页面暂未接入这条持久化链路。
+已实现能力发现、离线预检、幂等创建、独立 Worker、取消及按项目查询。报告/重评分 CLI、操作 Skill 与基础平台界面按实施计划继续交付；现有页面暂未接入这条持久化链路。
 
 ```sh
 node bin/decision-lab.mjs capabilities --json
 node bin/decision-lab.mjs plan validate --file examples/plans/local-fixture.json --json
 node bin/decision-lab.mjs experiment create --file examples/plans/local-fixture.json --project local-demo --idempotency-key demo-001 --json
+node bin/decision-lab.mjs worker run --project local-demo --once
 node bin/decision-lab.mjs experiment get --id <上一步的experimentId> --project local-demo --json
 ```
 
@@ -40,13 +41,27 @@ node bin/decision-lab.mjs experiment get --id <上一步的experimentId> --proje
 
 机器调用直接运行上述 Node 入口，stdout 为一个 JSON 结果，运行时诊断进入 stderr；`npm run cli -- ...` 可用于人工操作，npm 自身日志不属于机器契约。退出码 0 表示命令成功、2 表示输入/预检问题、1 表示运行错误；它们不代表模型成绩。输入和输出契约分别见 [plan schema](contracts/plan.v1.schema.json) 与 [result schema](contracts/result.v1.schema.json)。
 
-预检不访问模型或创建数据库。`examples/plans/unsupported-clef-generation.json` 用于验证能力冲突；当前机器入口只接受 `custom` / `derived` 协议，尚未注册验证的官方协议不会被标为官方兼容。计划明确固定版本、调用预算和运行时限，执行时的预算控制将在下一 session 实现。
+预检不访问模型或创建数据库。`examples/plans/unsupported-clef-generation.json` 用于验证能力冲突；当前机器入口只接受 `custom` / `derived` 协议，尚未注册验证的官方协议不会被标为官方兼容。计划明确固定版本、调用预算和运行时限，Worker 在发请求前持久预留调用额度；额度不是实际计费估算，结果未知和已失败调用不会自动退回。运行时限从首次授权起累计，重启不重置；达到时限停止待执行项并尽力中止在途请求。
 
 Cloudflare 方案使用 `adapter: cloudflare-native`、`model: clef` 或 `clef-flash`，凭据用 `credentialRef: env:CLOUDFLARE_API_TOKEN` 引用，并需要执行环境中的 `CLOUDFLARE_ACCOUNT_ID`。CLI 不自动加载 `.env`；本机可通过 `node --env-file=.env bin/decision-lab.mjs ...` 显式加载。Key 不放入计划或命令参数。当前项目/操作者标识仅用于本机范围与来源记录，未实现共享服务认证。
 
+Worker 默认持续轮询；上面的 `--once` 处理当前可领取任务后退出，不等待未过期的旧租约。Worker stdout 为空，运行诊断写入 stderr；进程正常退出不代表每个任务成功，使用 `experiment get` 查看执行计数、尝试错误、`attentionRequired` 及 `control`。测试适配器固定选首个标签或输出测试 JSON，成绩没有模型能力含义。
+
+取消未完成实验：
+
+```sh
+node bin/decision-lab.mjs experiment cancel --id <experimentId> --project local-demo --actor local-operator --json
+```
+
+同一数据库、同一项目只允许一个有效 Worker，默认租约 30 秒；可用 `--lease-ms 1000..300000` 和 `--poll-ms 10..10000` 调整。Ctrl+C / SIGTERM 尽力中止当前调用并退出；SIGKILL 或机器故障后，在租约过期后重启 Worker 恢复：未登记调用的任务可重新排队，已保存响应只补评分，其余登记调用标为 `outcome_unknown`，不自动重发。取消后的晚到响应仅追加证据，不能覆盖取消终态；中止不撤销提供商已执行的请求或费用。当前没有重新开启终止项或重试未知调用的命令。
+
+默认 Worker 仅领取 `controlled-fixture`，真实模型计划会留在队列。要执行真实模型，需显式加载执行环境并开启 `--allow-live`；该选项允许消费本项目中符合条件的真实模型计划及其冻结预算，运行前应检查队列。凭据缺失会在发请求前阻塞该执行，不占调用额度。此版本的执行与取消仅针对新机器计划，旧浏览器/benchmark 数据需要后续显式迁移。
+
+运行时存储以增量 schema v2 增加控制、租约和调用额度记录，不改写历史快照。升级前停写并做数据库一致性备份；回退时停止所有 Worker，保留当前库供审计并整体恢复备份，不对运行中的库直接删除控制表。此版本仍限单机受信任操作者环境。
+
 ## 公开基准契约验证
 
-第一条服务端持久化切口通过 CLI 驱动，目前未接入页面，也没有后台调度。现有页面仍使用后文描述的浏览器数据模式。
+服务端持久化链路通过 CLI 驱动；机器计划可由独立 Worker 调度，以下旧 benchmark 驱动仍显式同步执行，不会被 Worker 自动领取。目前尚未接入页面。现有页面仍使用后文描述的浏览器数据模式。
 
 ```sh
 npm run benchmark:setup   # 独立 Python 环境；用于运行参考评价器，不是平台运行依赖
@@ -122,12 +137,12 @@ Choice 参考标签为命名选项，Noul 为布尔值，Score 为从 0 开始�
 
 均匀概率演示不读标签；参考上界直接读答案，仅验证评分器。两者不进入真实模型汇总。
 
-## 实现与限制
+## 旧版页面的实现与限制
 
 - `src/page.html`：样式；`src/app.js`：交互；`src/engine.js`：校验、协议投影、归一化和指标；`src/seeds.js`：任务；`src/server.js`：模型代理。
 - `scripts/assemble.mjs` 组合为自包含 `worker/index.js`，产物为 `dist/`。
-- 任务与结果存当前浏览器，不跨设备同步。支持 JSON 导出，尚无结果备份导入。
-- 顺序任务运行依赖页面保持打开；关闭后可重试未完成项，没有后台队列。
+- 旧版页面的任务与结果存当前浏览器，不跨设备同步。支持 JSON 导出，尚无结果备份导入。
+- 旧版页面的顺序任务依赖页面保持打开；其数据尚未接入上述 CLI 持久队列。
 - 当前是独立判断与单步复合流程，尚未实现多轮环境仿真、视觉任务或大量样本校准。
 - 线上依赖 Sites owner-private 访问控制；公开前需增加用户隔离与配额。
 - 旧版组合优化代码在父目录 `decision-lab-legacy-v1` 留档，不参与当前构建。

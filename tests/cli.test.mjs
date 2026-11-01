@@ -37,8 +37,8 @@ const createArgs = (file, key = 'session-test') => ['experiment', 'create', '--f
 
 test('CLI discovers implemented capabilities, versions and help without opening SQLite', () => workspace(directory => {
   const result = invoke(directory, ['capabilities', '--json']);
-  assert.equal(result.data.execution.available, false);
-  assert.deepEqual(result.data.commands, ['capabilities', 'plan validate', 'experiment create', 'experiment get']);
+  assert.equal(result.data.execution.available, true);
+  assert.deepEqual(result.data.commands, ['capabilities', 'plan validate', 'experiment create', 'experiment get', 'experiment cancel', 'worker run']);
   assert.equal(result.stderr, '');
   assert.equal(invoke(directory, ['--help']).data.kind, 'help');
   assert.equal(existsSync(join(directory, '.local')), false);
@@ -62,7 +62,7 @@ test('CLI preflight is offline and side-effect free, rejects unsupported tasks a
 test('separate CLI processes create, replay and read one frozen experiment in explicit project scope', () => workspace(directory => {
   const file = save(directory), created = invoke(directory, createArgs(file)).data;
   assert.equal(created.state, 'queued'); assert.equal(created.executionCounts.planned, 1);
-  assert.equal(created.validation.warnings[0].code, 'WORKER_UNAVAILABLE');
+  assert.equal(created.validation.warnings[0].code, 'CONTROLLED_TEST_ONLY');
   const replay = invoke(directory, createArgs(file)).data;
   assert.equal(replay.experimentId, created.experimentId);
   const db = join(directory, '.local/decision-lab.sqlite'), before = digest(db);

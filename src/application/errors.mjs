@@ -12,6 +12,9 @@ export function publicError(error) {
   if (error instanceof ApplicationError) return error;
   const known = {
     IDEMPOTENCY_CONFLICT: ['IDEMPOTENCY_CONFLICT', 'The key already identifies a different plan.', 2],
+    WORKER_BUSY: ['WORKER_BUSY', 'Another Worker owns this project. Wait for it to stop or its lease to expire.', 1],
+    WORKER_LEASE_LOST: ['WORKER_LEASE_LOST', 'Worker ownership expired or was replaced. Execution stopped.', 1],
+    LEGACY_EXECUTION_UNSUPPORTED: ['LEGACY_EXECUTION_UNSUPPORTED', 'Legacy experiment needs an explicit migration before managed execution.', 2],
     NOT_FOUND: ['NOT_FOUND', 'Experiment not found in this project.', 2],
     SNAPSHOT_INTEGRITY_ERROR: ['INTEGRITY_ERROR', 'Stored snapshot integrity check failed.', 1],
     EVIDENCE_INTEGRITY_ERROR: ['INTEGRITY_ERROR', 'Stored evidence integrity check failed.', 1],

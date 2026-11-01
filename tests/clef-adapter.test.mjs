@@ -21,3 +21,17 @@ test('redirects and auth failures are retained as error evidence, never followed
   const result=await adapter(request);assert.equal(calls,1);assert.equal(result.output.providerError.httpStatus,status);assert.ok(!JSON.stringify(result).includes('test-key'));assert.equal(result.invocations[0].redacted,true);
  }
 });
+test('Worker cancellation reaches the transport and interrupted bodies return stable errors',async()=>{
+ const controller=new AbortController();controller.abort();
+ const adapter=createClefAdapter({accountId:'0'.repeat(32),apiToken:'test-key',transport:async(_,init)=>{
+  assert.equal(init.signal.aborted,true);throw Error('test-key must not escape');
+ }});
+ await assert.rejects(adapter(request,{signal:controller.signal}),e=>e.code==='UPSTREAM_NETWORK'&&!e.message.includes('test-key'));
+ const bodyFailure=createClefAdapter({accountId:'0'.repeat(32),apiToken:'test-key',transport:async()=>({status:200,ok:true,text:async()=>{throw Error('test-key');}})});
+ await assert.rejects(bodyFailure(request),e=>e.code==='UPSTREAM_BODY_INTERRUPTED'&&!e.message.includes('test-key'));
+});
+test('a native selection without probabilities remains persistable JSON evidence',async()=>{
+ const adapter=createClefAdapter({accountId:'0'.repeat(32),apiToken:'test-key',transport:async()=>Response.json({success:true,result:{answers:{decision:{choice:'oos'}}}})});
+ const result=await adapter(request);assert.equal('probabilities' in result.output,false);assert.equal(result.output.evidenceSource,'native-selection');
+ const {fingerprint}=await import('../src/domain/benchmark.mjs');assert.doesNotThrow(()=>fingerprint(result));
+});

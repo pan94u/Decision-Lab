@@ -23,6 +23,12 @@ export class ExperimentService {
     if (typeof id !== 'string' || !id.trim() || typeof projectId !== 'string' || !projectId.trim()) throw new ApplicationError('CONTEXT_REQUIRED', 'Experiment ID and project context are required.');
     return this.withStore('get', store => this.describe(store.get(id, projectId)));
   }
+  cancel(id, { projectId, actorId }) {
+    if (typeof id !== 'string' || !id.trim() || typeof projectId !== 'string' || !projectId.trim() || typeof actorId !== 'string' || !actorId.trim() || actorId.length > 256) {
+      throw new ApplicationError('CONTEXT_REQUIRED', 'Experiment ID, project and cancellation actor are required.');
+    }
+    return this.withStore('cancel', store => this.describe(store.cancel(id, projectId, actorId)));
+  }
   withStore(operation, fn) {
     let store;
     try { store = this.openStore(operation); return fn(store); }
@@ -38,8 +44,17 @@ export class ExperimentService {
       state: counts.queued === experiment.executions.length ? 'queued' : counts.running || counts.queued ? 'in_progress' : 'completed',
       executionCounts: { planned: experiment.executions.length, states: counts },
       versions: Object.fromEntries(['suite', 'subject', 'protocol', 'evaluation'].map(key => [key, { id: experiment.snapshot[key].id, revision: experiment.snapshot[key].revision }])),
-      // P1.1 deliberately excludes the snapshot, reference evidence and response bodies.
-      executions: experiment.executions.map(e => ({ id: e.id, caseId: e.case_id, trial: e.trial, state: e.state })),
+      attentionRequired: experiment.executions.some(e => ['outcome_unknown', 'blocked', 'failed', 'invalid'].includes(e.state)),
+      control: experiment.control ? {
+        startedAt: experiment.control.started_ms === null ? null : new Date(experiment.control.started_ms).toISOString(),
+        deadlineAt: experiment.control.deadline_ms === null ? null : new Date(experiment.control.deadline_ms).toISOString(),
+        reservedInvocations: experiment.control.reserved_invocations, stopReason: experiment.control.stop_reason,
+      } : null,
+      // No reference evidence or response bodies in routine status output.
+      executions: experiment.executions.map(e => ({ id: e.id, caseId: e.case_id, trial: e.trial, state: e.state,
+        attempts: e.attempts.map(a => ({ id: a.id, state: a.state, error: a.error, hasSavedResponse: !!a.observation,
+          invocations: a.invocations.length, assessments: a.assessments.length })),
+      })),
     };
   }
 }

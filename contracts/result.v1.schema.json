@@ -316,12 +316,96 @@
               "state": {
                 "type": "string",
                 "minLength": 1
+              },
+              "attempts": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "state",
+                    "error",
+                    "hasSavedResponse",
+                    "invocations",
+                    "assessments"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "state": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "hasSavedResponse": {
+                      "type": "boolean"
+                    },
+                    "invocations": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "assessments": {
+                      "type": "integer",
+                      "minimum": 0
+                    }
+                  }
+                }
               }
             }
           }
         },
         "validation": {
           "$ref": "#/$defs/validation"
+        },
+        "attentionRequired": {
+          "type": "boolean"
+        },
+        "control": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "object",
+              "required": [
+                "startedAt",
+                "deadlineAt",
+                "reservedInvocations",
+                "stopReason"
+              ],
+              "properties": {
+                "startedAt": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "deadlineAt": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "reservedInvocations": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "stopReason": {
+                  "enum": [
+                    null,
+                    "cancelled",
+                    "runtime_exceeded",
+                    "call_budget_exceeded"
+                  ]
+                }
+              }
+            }
+          ]
         }
       }
     },

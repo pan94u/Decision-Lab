@@ -60,6 +60,7 @@ export class ExperimentStore {
       this.db.prepare('INSERT INTO experiments VALUES(?,?,?,?,?,?,?)').run(id, plan.projectId, plan.actorId, idempotencyKey, hash, snapshot, now());
       const insert = this.db.prepare('INSERT INTO executions(id,experiment_id,case_id,trial,state) VALUES(?,?,?,?,?)');
       for (const c of plan.suite.cases) for (let trial = 0; trial < (plan.repeats || 1); trial++) insert.run(randomUUID(), id, c.id, trial, 'queued');
+      this.onCreated?.(id, plan);
       this.event(id, plan.actorId, 'ExperimentCreated', { planHash: hash });
       return id;
     });
@@ -103,20 +104,24 @@ export class ExperimentStore {
     return this.transaction(() => {
       const current = this.db.prepare('SELECT state,generation FROM executions WHERE id=?').get(claim.execution.id);
       if (current.state !== 'running' || current.generation !== claim.generation) throw Error('STALE_EXECUTION');
-      const raw = canonical(envelope.output);
-      this.db.prepare('INSERT INTO observations VALUES(?,?,?,?,?)').run(randomUUID(), claim.attemptId, raw, fingerprint(envelope.output), now());
-      const calls = envelope.invocations || [envelope.output];
-      if (!Array.isArray(calls)) throw Error('Invalid invocation list');
-      const insert = this.db.prepare('INSERT INTO invocations VALUES(?,?,?,?,?)');
-      calls.forEach((call, index) => insert.run(randomUUID(), claim.attemptId, index, canonical(call), fingerprint(call)));
+      if (claim.ownerId) this.assertLease(claim);
+      const calls = this.insertEnvelope(claim.attemptId, envelope);
       this.db.prepare('UPDATE attempts SET state=? WHERE id=?').run('response_saved', claim.attemptId);
       this.event(claim.execution.experiment_id, claim.plan.actorId, 'ResponseRecorded', { attemptId: claim.attemptId, invocations: calls.length });
     });
   }
-  recordAssessment(attemptId, projectId, evaluation, evaluator = assess) {
+  insertEnvelope(attemptId, envelope) {
+    this.db.prepare('INSERT INTO observations VALUES(?,?,?,?,?)').run(randomUUID(), attemptId, canonical(envelope.output), fingerprint(envelope.output), now());
+    const calls = envelope.invocations || [envelope.output];
+    if (!Array.isArray(calls)) throw Error('Invalid invocation list');
+    const insert = this.db.prepare('INSERT INTO invocations VALUES(?,?,?,?,?)');
+    calls.forEach((call, index) => insert.run(randomUUID(), attemptId, index, canonical(call), fingerprint(call)));
+    return calls;
+  }
+  recordAssessment(attemptId, projectId, evaluation, evaluator = assess, authority) {
     const attempt = this.db.prepare('SELECT a.*,e.experiment_id,e.case_id,e.generation AS current_generation,e.state AS execution_state,p.snapshot FROM attempts a JOIN executions e ON a.execution_id=e.id JOIN experiments p ON e.experiment_id=p.id WHERE a.id=? AND p.project_id=?').get(attemptId, projectId);
     if (!attempt) throw Error('NOT_FOUND');
-    if (attempt.current_generation !== attempt.generation || !['running','succeeded','failed'].includes(attempt.execution_state)) throw Error('STALE_EXECUTION');
+    if (attempt.current_generation !== attempt.generation || !['running','succeeded','failed','invalid'].includes(attempt.execution_state)) throw Error('STALE_EXECUTION');
     const observation = this.db.prepare('SELECT * FROM observations WHERE attempt_id=?').get(attemptId);
     if (!observation) throw Error('NO_RESPONSE_TO_EVALUATE');
     const plan = JSON.parse(attempt.snapshot), c = plan.suite.cases.find(x => x.id === attempt.case_id);
@@ -125,10 +130,11 @@ export class ExperimentStore {
     const result = evaluator(c, JSON.parse(observation.raw), evaluation), id = randomUUID();
     this.transaction(() => {
       const current = this.db.prepare('SELECT generation,state FROM executions WHERE id=?').get(attempt.execution_id);
-      if (current.generation !== attempt.generation || current.state === 'cancelled') throw Error('STALE_EXECUTION');
+      if (current.generation !== attempt.generation || !['running','succeeded','failed','invalid'].includes(current.state)) throw Error('STALE_EXECUTION');
+      if (authority) this.assertLease(authority);
       this.db.prepare('INSERT INTO assessments VALUES(?,?,?,?,?,?,?)').run(id, attemptId, canonical(evaluation), fingerprint(evaluation), canonical(result), fingerprint(result), now());
       this.db.prepare('UPDATE attempts SET state=?,error=NULL WHERE id=?').run('evaluated', attemptId);
-      this.db.prepare('UPDATE executions SET state=? WHERE id=?').run(result.status === 'valid' ? 'succeeded' : 'failed', attempt.execution_id);
+      this.db.prepare('UPDATE executions SET state=? WHERE id=?').run(result.status === 'valid' ? 'succeeded' : 'invalid', attempt.execution_id);
       this.event(attempt.experiment_id, plan.actorId, 'AssessmentRecorded', { attemptId, assessmentId: id, evaluationHash: fingerprint(evaluation) });
     });
     return result;
@@ -152,6 +158,6 @@ export class ExperimentStore {
   report(id, projectId) {
     const experiment = this.get(id, projectId);
     const results = experiment.executions.flatMap(x => x.attempts.slice(-1).flatMap(a => a.assessments.slice(-1).map(v => v.result)));
-    return { experiment, executionCounts: { planned: experiment.executions.length, assessed: results.length, states: Object.fromEntries(['queued','running','succeeded','failed'].map(state=>[state,experiment.executions.filter(x=>x.state===state).length])) }, summary: { scope: 'assessed executions only; pending/unassessed are not hidden', ...aggregate(results) } };
+    return { experiment, executionCounts: { planned: experiment.executions.length, assessed: results.length, states: Object.fromEntries(['queued','running','succeeded','failed','invalid','blocked','cancelled','budget_exhausted','outcome_unknown'].map(state=>[state,experiment.executions.filter(x=>x.state===state).length])) }, summary: { scope: 'assessed executions only; pending/unassessed are not hidden', ...aggregate(results) } };
   }
 }

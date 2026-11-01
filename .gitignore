@@ -1,6 +1,6 @@
 node_modules/
 dist/
-worker/
+/worker/
 .openai/
 .env
 .env.*

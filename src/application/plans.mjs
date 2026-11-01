@@ -62,7 +62,8 @@ export function preflightPlan(input, { projectId, environment = {} } = {}) {
     kind: 'plan-validation', valid: true, planHash: fingerprint(plan),
     plannedExecutions: executions, invocationUpperBound: executions,
     budget: plan.budget, estimatedCost: null,
-    warnings: [{ code: 'WORKER_UNAVAILABLE', message: 'Plan can be queued; this release has no independent Worker.' },
-      ...(plan.subject.adapter === 'controlled-fixture' ? [{ code: 'CONTROLLED_TEST_ONLY', message: 'Fixture outputs cannot be reported as model capability scores.' }] : [])],
+    warnings: plan.subject.adapter === 'controlled-fixture'
+      ? [{ code: 'CONTROLLED_TEST_ONLY', message: 'Fixture outputs cannot be reported as model capability scores.' }]
+      : [{ code: 'LIVE_REQUIRES_OPT_IN', message: 'Only a Worker started with --allow-live may execute this plan.' }],
   } };
 }
