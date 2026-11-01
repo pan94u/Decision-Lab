@@ -1,0 +1,48 @@
+{
+  "schemaVersion": "decision-lab.plan/v1",
+  "projectId": "local-demo",
+  "actorId": "local-operator",
+  "suite": {
+    "id": "support-intents",
+    "revision": "1",
+    "cases": [
+      {
+        "id": "outside-domain",
+        "kind": "classification",
+        "input": {
+          "text": "Please book a flight for me.",
+          "labels": [
+            "account_balance",
+            "oos"
+          ]
+        },
+        "reference": {
+          "label": "oos"
+        },
+        "source": {
+          "revision": "self-authored/1",
+          "split": "test"
+        }
+      }
+    ]
+  },
+  "subject": {
+    "id": "fixture",
+    "revision": "1",
+    "adapter": "controlled-fixture"
+  },
+  "protocol": {
+    "id": "single-step",
+    "revision": "1",
+    "mode": "custom"
+  },
+  "evaluation": {
+    "id": "label-match",
+    "revision": "1"
+  },
+  "repeats": 1,
+  "budget": {
+    "maxInvocations": 1,
+    "maxRuntimeMs": 60000
+  }
+}

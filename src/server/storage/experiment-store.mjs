@@ -6,10 +6,11 @@ import { canonical, fingerprint, validatePlan, adapterInput, assess, aggregate }
 
 const now = () => new Date().toISOString();
 export class ExperimentStore {
-  constructor(path) {
-    if (path !== ':memory:') mkdirSync(dirname(path), { recursive: true, mode: 0o700 });
-    this.db = new DatabaseSync(path);
-    if (path !== ':memory:') chmodSync(path, 0o600);
+  constructor(path, { readOnly = false } = {}) {
+    if (!readOnly && path !== ':memory:') mkdirSync(dirname(path), { recursive: true, mode: 0o700 });
+    this.db = new DatabaseSync(path, { readOnly });
+    if (!readOnly && path !== ':memory:') chmodSync(path, 0o600);
+    if (readOnly) { this.db.exec('PRAGMA busy_timeout=5000;'); return; }
     this.db.exec('PRAGMA foreign_keys=ON; PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA busy_timeout=5000;');
     this.transaction(() => {
       this.db.exec(`

@@ -1,0 +1,438 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:decision-lab:result:v1",
+  "title": "Decision Lab command result v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "requestId",
+    "data",
+    "error"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "decision-lab.result/v1"
+    },
+    "requestId": {
+      "type": "string",
+      "pattern": "^[a-f0-9-]{36}$"
+    },
+    "data": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/$defs/validation"
+        },
+        {
+          "$ref": "#/$defs/experiment"
+        },
+        {
+          "$ref": "#/$defs/capabilities"
+        },
+        {
+          "$ref": "#/$defs/help"
+        }
+      ]
+    },
+    "error": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "code",
+            "message",
+            "details",
+            "retryable"
+          ],
+          "properties": {
+            "code": {
+              "type": "string"
+            },
+            "message": {
+              "type": "string"
+            },
+            "details": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              }
+            },
+            "retryable": {
+              "type": "boolean"
+            }
+          }
+        }
+      ]
+    }
+  },
+  "oneOf": [
+    {
+      "properties": {
+        "data": {
+          "type": "object"
+        },
+        "error": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "properties": {
+        "data": {
+          "type": "null"
+        },
+        "error": {
+          "type": "object"
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "validation": {
+      "type": "object",
+      "required": [
+        "kind",
+        "valid",
+        "planHash",
+        "plannedExecutions",
+        "invocationUpperBound",
+        "budget",
+        "estimatedCost",
+        "warnings"
+      ],
+      "properties": {
+        "kind": {
+          "const": "plan-validation"
+        },
+        "valid": {
+          "const": true
+        },
+        "planHash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "plannedExecutions": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "invocationUpperBound": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "budget": {
+          "type": "object"
+        },
+        "estimatedCost": {
+          "type": "null"
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "code",
+              "message"
+            ],
+            "properties": {
+              "code": {
+                "type": "string",
+                "minLength": 1
+              },
+              "message": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    "experiment": {
+      "type": "object",
+      "required": [
+        "kind",
+        "experimentId",
+        "projectId",
+        "actorId",
+        "createdAt",
+        "planHash",
+        "state",
+        "executionCounts",
+        "versions",
+        "executions"
+      ],
+      "properties": {
+        "kind": {
+          "const": "experiment"
+        },
+        "experimentId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "projectId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "actorId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "createdAt": {
+          "type": "string",
+          "minLength": 1
+        },
+        "planHash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "state": {
+          "enum": [
+            "queued",
+            "in_progress",
+            "completed"
+          ]
+        },
+        "executionCounts": {
+          "type": "object",
+          "required": [
+            "planned",
+            "states"
+          ],
+          "properties": {
+            "planned": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "states": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          }
+        },
+        "versions": {
+          "type": "object",
+          "required": [
+            "suite",
+            "subject",
+            "protocol",
+            "evaluation"
+          ],
+          "properties": {
+            "suite": {
+              "type": "object",
+              "required": [
+                "id",
+                "revision"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "revision": {
+                  "type": "string"
+                }
+              }
+            },
+            "subject": {
+              "type": "object",
+              "required": [
+                "id",
+                "revision"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "revision": {
+                  "type": "string"
+                }
+              }
+            },
+            "protocol": {
+              "type": "object",
+              "required": [
+                "id",
+                "revision"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "revision": {
+                  "type": "string"
+                }
+              }
+            },
+            "evaluation": {
+              "type": "object",
+              "required": [
+                "id",
+                "revision"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "revision": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "executions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "caseId",
+              "trial",
+              "state"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "caseId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "trial": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "state": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "validation": {
+          "$ref": "#/$defs/validation"
+        }
+      }
+    },
+    "capabilities": {
+      "type": "object",
+      "required": [
+        "kind",
+        "contractVersion",
+        "planSchema",
+        "resultSchema",
+        "commands",
+        "execution",
+        "adapters",
+        "evaluations",
+        "limits",
+        "protocolModes",
+        "credentialResolution",
+        "deployment"
+      ],
+      "properties": {
+        "kind": {
+          "const": "capabilities"
+        },
+        "contractVersion": {
+          "const": "decision-lab.cli/v1"
+        },
+        "commands": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "execution": {
+          "type": "object",
+          "required": [
+            "available",
+            "reason",
+            "automaticRetries"
+          ],
+          "properties": {
+            "available": {
+              "type": "boolean"
+            },
+            "reason": {
+              "type": "string",
+              "minLength": 1
+            },
+            "automaticRetries": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "adapters": {
+          "type": "object"
+        },
+        "evaluations": {
+          "type": "object"
+        },
+        "limits": {
+          "type": "object"
+        },
+        "planSchema": {
+          "const": "urn:decision-lab:plan:v1"
+        },
+        "resultSchema": {
+          "const": "urn:decision-lab:result:v1"
+        },
+        "protocolModes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "credentialResolution": {
+          "type": "string"
+        },
+        "deployment": {
+          "type": "string"
+        }
+      }
+    },
+    "help": {
+      "type": "object",
+      "required": [
+        "kind",
+        "usage",
+        "output",
+        "contractVersion"
+      ],
+      "properties": {
+        "kind": {
+          "const": "help"
+        },
+        "usage": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "output": {
+          "type": "string",
+          "minLength": 1
+        },
+        "contractVersion": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}

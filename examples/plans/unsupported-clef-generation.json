@@ -1,0 +1,50 @@
+{
+  "schemaVersion": "decision-lab.plan/v1",
+  "projectId": "local-demo",
+  "actorId": "local-operator",
+  "suite": {
+    "id": "generation-mismatch",
+    "revision": "1",
+    "cases": [
+      {
+        "id": "json-answer",
+        "kind": "instructions",
+        "input": {
+          "prompt": "Return a JSON object.",
+          "criteria": [
+            {
+              "id": "detectable_format:json_format",
+              "args": {}
+            }
+          ]
+        },
+        "reference": {},
+        "source": {
+          "revision": "self-authored/1"
+        }
+      }
+    ]
+  },
+  "subject": {
+    "id": "clef",
+    "revision": "1",
+    "adapter": "cloudflare-native",
+    "model": "clef",
+    "credentialRef": "env:CLOUDFLARE_API_TOKEN"
+  },
+  "protocol": {
+    "id": "single-step",
+    "revision": "1",
+    "mode": "custom"
+  },
+  "evaluation": {
+    "id": "ifeval",
+    "revision": "1",
+    "variant": "strict"
+  },
+  "repeats": 1,
+  "budget": {
+    "maxInvocations": 1,
+    "maxRuntimeMs": 60000
+  }
+}

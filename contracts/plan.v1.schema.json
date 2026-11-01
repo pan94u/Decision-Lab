@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:decision-lab:plan:v1",
+  "title": "Decision Lab machine plan v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "projectId", "actorId", "suite", "subject", "protocol", "evaluation", "repeats", "budget"],
+  "properties": {
+    "schemaVersion": {"const": "decision-lab.plan/v1"},
+    "projectId": {"$ref": "#/$defs/id"},
+    "actorId": {"$ref": "#/$defs/id"},
+    "suite": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "revision", "cases"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"}, "revision": {"$ref": "#/$defs/id"},
+        "cases": {"type": "array", "minItems": 1, "maxItems": 10000, "items": {"$ref": "#/$defs/case"}}
+      }
+    },
+    "subject": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "revision", "adapter"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"}, "revision": {"$ref": "#/$defs/id"},
+        "adapter": {"enum": ["controlled-fixture", "cloudflare-native"]},
+        "model": {"enum": ["clef", "clef-flash"]},
+        "credentialRef": {"type": "string", "pattern": "^env:[A-Z][A-Z0-9_]{0,127}$"},
+        "implementationSha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+      }
+    },
+    "protocol": {
+      "type": "object", "required": ["id", "revision", "mode"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"}, "revision": {"$ref": "#/$defs/id"},
+        "mode": {"enum": ["custom", "derived", "official-compatible"]},
+        "verificationReport": {"$ref": "#/$defs/id"}
+      },
+      "additionalProperties": true
+    },
+    "evaluation": {
+      "type": "object", "additionalProperties": false, "required": ["id", "revision"],
+      "properties": {"id": {"enum": ["label-match", "ifeval"]}, "revision": {"const": "1"}, "variant": {"enum": ["strict", "loose"]}}
+    },
+    "repeats": {"type": "integer", "minimum": 1, "maximum": 100},
+    "budget": {
+      "type": "object", "additionalProperties": false,
+      "required": ["maxInvocations", "maxRuntimeMs"],
+      "properties": {
+        "maxInvocations": {"type": "integer", "minimum": 1, "maximum": 1000000},
+        "maxRuntimeMs": {"type": "integer", "minimum": 1, "maximum": 86400000}
+      }
+    }
+  },
+  "$defs": {
+    "id": {"type": "string", "minLength": 1, "maxLength": 256, "pattern": "\\S"},
+    "case": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "kind", "input", "reference", "source"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"}, "kind": {"enum": ["choice", "classification", "instructions"]},
+        "input": {
+          "type": "object", "additionalProperties": false,
+          "properties": {
+            "text": {"type": "string", "minLength": 1}, "prompt": {"type": "string", "minLength": 1},
+            "labels": {"type": "array", "minItems": 2, "maxItems": 10000, "uniqueItems": true, "items": {"$ref": "#/$defs/id"}},
+            "candidates": {"type": "array", "minItems": 2, "items": {
+              "type": "object", "additionalProperties": false, "required": ["id", "text"],
+              "properties": {"id": {"$ref": "#/$defs/id"}, "text": {"type": "string", "minLength": 1}}
+            }},
+            "criteria": {"type": "array", "minItems": 1, "items": {
+              "type": "object", "additionalProperties": false, "required": ["id", "args"],
+              "properties": {
+                "id": {"enum": ["keywords:existence", "keywords:forbidden_words", "detectable_format:json_format", "startend:quotation"]},
+                "args": {"type": "object", "additionalProperties": false, "properties": {
+                  "keywords": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+                  "forbidden_words": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}
+                }}
+              }
+            }}
+          }
+        },
+        "reference": {"type": "object", "additionalProperties": false, "properties": {"label": {"$ref": "#/$defs/id"}}},
+        "source": {"type": "object", "required": ["revision"], "properties": {"revision": {"$ref": "#/$defs/id"}}, "additionalProperties": true}
+      }
+    }
+  }
+}

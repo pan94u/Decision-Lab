@@ -4,17 +4,18 @@
 
 ## 设计与实施
 
-目标架构及领域约定见 [架构](docs/architecture.md)，当前周的工作切口与完成条件见 [实施计划](docs/implementation-plan.md)。这两份文档描述演进目标；下文仅描述当前已实现的功能。
+目标架构及领域约定见 [架构](docs/architecture.md)，当前阶段的工作切口与完成条件见 [实施计划](docs/implementation-plan.md)。这两份文档描述演进目标；session 交付记录见 [logbook](docs/logbook.md)，执行约定见 [AGENTS.md](AGENTS.md)。下文仅描述当前已实现的功能。
 
 ## 启动
 
 ```sh
 cd /Users/pan9/code/DM-eval/decision-lab
+npm ci
 npm run setup  # 一次性配置 Account ID / Token；输入 Token 不回显
 npm run dev
 ```
 
-需要 Node.js 24.14.1 或更新版本（本轮验证环境为 24.14.1），无需安装 npm 依赖。新增持久化切口使用内置 node:sqlite；该环境中此模块仍有 ExperimentalWarning，当前仅声明所测单机范围。
+需要 Node.js 24.14.1 或更新版本（本轮验证环境为 24.14.1），通过 `npm ci` 安装锁定依赖；CLI 使用 Ajv 校验 JSON Schema。新增持久化切口使用内置 node:sqlite；该环境中此模块仍有 ExperimentalWarning，当前仅声明所测单机范围。
 
 打开 http://localhost:4173 。启动时自动读取项目根目录 `.env`，终端只显示是否配置成功，不输出密钥。`.env` 已加入 Git 忽略规则，setup 设置文件权限为 0600。也支持服务端环境变量 `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID`，或在页面配置临时 Token。线上密钥保存在 Sites secrets 中，不在源码、任务记录和 localStorage 内。切换其他服务商不会复用 Cloudflare 凭据。
 
@@ -23,6 +24,25 @@ npm run build
 npm test
 npm run validate
 ```
+
+## 机器入口 CLI（S001）
+
+已实现能力发现、离线预检、幂等创建及按项目查询。当前只创建排队实验，尚无独立 Worker；执行、报告、Skill 与基础平台界面按实施计划逐个 session 交付。现有页面暂未接入这条持久化链路。
+
+```sh
+node bin/decision-lab.mjs capabilities --json
+node bin/decision-lab.mjs plan validate --file examples/plans/local-fixture.json --json
+node bin/decision-lab.mjs experiment create --file examples/plans/local-fixture.json --project local-demo --idempotency-key demo-001 --json
+node bin/decision-lab.mjs experiment get --id <上一步的experimentId> --project local-demo --json
+```
+
+默认数据库为当前目录的 `.local/decision-lab.sqlite`；创建和查询可用 `--db PATH` 显式指定。同一项目同一幂等键与相同计划返回同一 ID，不同计划返回冲突；项目必须与计划一致。样例为自建测试任务，不能作为真实模型成绩。
+
+机器调用直接运行上述 Node 入口，stdout 为一个 JSON 结果，运行时诊断进入 stderr；`npm run cli -- ...` 可用于人工操作，npm 自身日志不属于机器契约。退出码 0 表示命令成功、2 表示输入/预检问题、1 表示运行错误；它们不代表模型成绩。输入和输出契约分别见 [plan schema](contracts/plan.v1.schema.json) 与 [result schema](contracts/result.v1.schema.json)。
+
+预检不访问模型或创建数据库。`examples/plans/unsupported-clef-generation.json` 用于验证能力冲突；当前机器入口只接受 `custom` / `derived` 协议，尚未注册验证的官方协议不会被标为官方兼容。计划明确固定版本、调用预算和运行时限，执行时的预算控制将在下一 session 实现。
+
+Cloudflare 方案使用 `adapter: cloudflare-native`、`model: clef` 或 `clef-flash`，凭据用 `credentialRef: env:CLOUDFLARE_API_TOKEN` 引用，并需要执行环境中的 `CLOUDFLARE_ACCOUNT_ID`。CLI 不自动加载 `.env`；本机可通过 `node --env-file=.env bin/decision-lab.mjs ...` 显式加载。Key 不放入计划或命令参数。当前项目/操作者标识仅用于本机范围与来源记录，未实现共享服务认证。
 
 ## 公开基准契约验证
 
