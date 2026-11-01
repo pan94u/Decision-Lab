@@ -8,3 +8,9 @@ worker/
 artifacts/
 *.tar.gz
 .DS_Store
+
+.cache/
+.local/
+
+__pycache__/
+*.pyc
