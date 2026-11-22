@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision Lab 整体方案 · V0.2</title>
+<style>
+:root{color-scheme:light;--ink:#18253a;--muted:#495b71;--accent:#006e68;--line:#d9e3ec;--pale:#edf8f6}
+*{box-sizing:border-box}
+body{margin:0;background:#f5f8fb;color:var(--ink);font:16px/1.75 "PingFang SC","Microsoft YaHei",system-ui,sans-serif}
+nav{position:fixed;inset:0 auto 0 0;width:250px;overflow:auto;background:white;border-right:1px solid var(--line);padding:29px 20px}
+nav strong{display:block;margin-bottom:12px;font-size:19px}
+nav a{display:block;color:var(--accent);text-decoration:none;padding:5px 0}
+nav a.sub{margin-left:20px;color:var(--muted);font-size:14px}
+a:hover,a:focus-visible{text-decoration:underline}
+main{margin-left:250px;max-width:1320px;padding:34px clamp(20px,4vw,64px) 70px}
+header{background:#152b42;color:#fff;padding:32px clamp(20px,4vw,48px);border-radius:16px}
+header p{max-width:760px;color:#dce8f2}
+header .meta{font-size:14px;color:#bcebe5}
+h1{font-size:clamp(32px,5vw,50px);line-height:1.15;margin:.25em 0}
+h2{margin:0 0 18px;border-bottom:2px solid var(--accent);padding-bottom:8px;font-size:27px}
+h3{margin:25px 0 8px;font-size:19px}
+section{margin:26px 0;background:white;border:1px solid var(--line);border-radius:14px;padding:22px clamp(15px,3vw,32px)}
+p{margin:8px 0 14px}ul,ol{padding-left:1.45em}
+li{margin:.35em 0}
+.callout{background:var(--pale);border-left:4px solid var(--accent);padding:12px 16px;margin:16px 0}
+.scroll{overflow-x:auto;margin:14px 0}
+table{border-collapse:collapse;width:100%;min-width:560px;font-size:14px;text-align:left}
+th,td{border:1px solid var(--line);padding:9px 12px;vertical-align:top}
+th{background:#eaf1f7}
+tbody tr:nth-child(even){background:#f9fbfd}
+footer{color:var(--muted);font-size:14px}
+@media(max-width:780px){nav{position:static;width:auto;border-bottom:1px solid var(--line)}nav a.sub{display:none}main{margin:0;padding:18px 13px 38px}}
+@media print{nav{display:none}main{margin:0;padding:0}header{color:#14223a;background:#fff;border:1px solid var(--line)}header p,header .meta{color:#14223a}section{border:0;padding:0}tr{break-inside:avoid}h2,h3{break-after:avoid}}
+</style>
+</head>
+<body>
+<nav aria-label="目录">
+<strong>Decision Lab · 整体方案</strong>
+<a href="#problem">一　问题定位</a><a class="sub" href="#position">企业智能架构中的位置</a>
+<a href="#value">二　解决方案价值</a><a class="sub" href="#matrix">企业智能化架构双维矩阵</a>
+<a href="#architecture">三　架构设计</a><a class="sub" href="#domain">领域边界与版本</a><a class="sub" href="#interfaces">接入与运行契约</a>
+<a href="#rollout">四　落地规划</a><a class="sub" href="#ownership">团队分工与协作</a><a class="sub" href="#review">架构评审与验收</a>
+<a href="#risks">五　技术难题</a>
+</nav>
+<main>
+<header>
+<div class="meta">V0.2 · 架构评审稿 · 2026 年 11 月 22 日</div>
+<h1>Decision Lab 整体方案</h1>
+<p><strong>愿景｜让处于不同业务阶段、具有不同 AI 渗透深度的企业，都能在真实生产中建立持续运转的智能化转型飞轮。</strong></p>
+<p>Decision Lab 帮助业务团队梳理目标、职责、规则与例外，用共同度量衡验证智能体表现、改进组织协作，再以生产结果检验调整。平台助推业务升级。市场选择、业务策略、经营投入与最终结果由企业承担。</p>
+</header>
+<section id="problem">
+<h2>一　问题定位</h2>
+<h3>1.1 企业缺少什么</h3>
+<p>不同企业在不同市场下会选择不同策略。即便在同一个集团，有的 BU 更看重增长，有的更看重回款、服务质量或成本。共同缺口是缺少一套可在生产中持续使用的度量衡，把业务目标、过程约束、组织协作和执行结果放到同一套可复核的评价流程中。一次正常的工具调用只能说明操作发生了，业务验收还需要确认结果、影响与例外处理是否符合当下策略。</p>
+<h3>1.2 企业在买什么</h3>
+<p>业务负责人和业务数智化负责人为更清晰的业务规则、更快的改进验证和更可控的委托范围付费。智能体评测是实现手段。通过开始评价一次实际工作，业务团队会被迫明确交付标准、责任归属、冲突优先级和例外，进而有依据调整工作本身。平台对测量的可追溯性与方法质量负责，经营团队对策略选择、授权和业务结果负责。</p>
+<h3 id="position">1.3 企业智能架构中的位置</h3>
+<div class="scroll"><table>
+<thead><tr><th>职能</th><th>负责的事实与决定</th><th>与 Decision Lab 的接口</th></tr></thead>
+<tbody>
+<tr><td>业务治理</td><td>定义职责、规则、风险容忍度和授权，批准发布、接管及例外。</td><td>提供业务判据，接收可复核的验证结果与授权建议。</td></tr>
+<tr><td>AI 操作系统与业务系统</td><td>执行 Agent 与人工流程，实施权限、发布、停止和回滚。</td><td>提供版本、执行入口和实际业务状态。</td></tr>
+<tr><td>现有可观测系统</td><td>采集与查询轨迹、日志、指标。</td><td>经授权导入所需证据，并保留来源关联。</td></tr>
+<tr><td><strong>Decision Lab</strong></td><td>定义评测任务，组织证据与复测，形成能力画像、诊断和版本比较。</td><td>把证据链和结论交给业务治理与发布系统使用。</td></tr>
+</tbody></table></div>
+<p>已有工程基础包括版本化 CLI、离线预检、幂等实验创建与可恢复的单机 Worker。历史 CLEF 实测和公开基准子集验证支撑当前原型。Forge 提供生产实践参考，尤其是外部轨迹接入、混合评分和人工复核。Decision Lab 独立实现自己的领域模型、接口和运行链路。</p>
+</section>
+<section id="value">
+<h2>二　解决方案价值</h2>
+<h3>2.1 组织如何使用这套度量衡</h3>
+<div class="scroll"><table>
+<thead><tr><th>借鉴的人类组织知识</th><th>在平台里的表达</th><th>帮助组织改善什么</th></tr></thead>
+<tbody>
+<tr><td>组织行为学中的角色、职责与协作</td><td>用职责、目标、授权、交接、人工接管与团队结果设计评测。涉及多个 Agent 或人机交接时，同时验证个人角色与端到端流程。</td><td>发现职责重叠、交接断点、激励与任务目标冲突，区分个体改进和流程改进。</td></tr>
+<tr><td>MBTI 的多维描述方式</td><td>为某个版本在特定业务情境下形成画像，例如自主完成、优先求证、主动转交及适用边界。维度由业务任务定义，结论绑定可观察行为与样本。</td><td>便于分配工作、组合角色和发现能力缺口。画像按情境和版本更新，用证据支持分工。</td></tr>
+</tbody></table></div>
+<p>集团共用的是度量方法：目标关联、评测条件、证据口径、样本范围和复测规则。各 BU 按自身市场、策略和风险设定指标与权衡。同一种成功率只有在业务定义、样本和统计单位足够可比时才可横向比较。</p>
+<h3>2.2 生产转型飞轮与资产沉淀</h3>
+<ol>
+<li><strong>梳理业务。</strong> 业务方从目标、职责、现行流程和例外中定义可验证的成功条件，并建立人工或规则基线。</li>
+<li><strong>度量生产。</strong> 接入经授权的轨迹、业务状态和延迟出现的结果，从典型业务、异常和高风险边界建立复测任务。</li>
+<li><strong>判断该改哪里。</strong> 同一套业务要求下验证 Agent 改进。业务要求本身有冲突或效果不佳时，由业务方修订规则、协作方式与授权，形成独立版本。</li>
+<li><strong>复测并回看结果。</strong> 应用团队验证改动，业务方及发布方依权限决定上线、维持或收回授权。后续业务结果验证变化是否兑现，新例外再进入用例集。</li>
+</ol>
+<p class="callout">每转一轮，应留下可复用的业务资产：职责与规则、例外、用例、证据、决定及其结果。Agent、模型或团队更换之后，企业仍能沿这些资产持续学习。规则遵守程度和经营效果分别评价，后者的归因需要与问题相匹配的对照。</p>
+<h3 id="matrix">2.3 企业智能化架构双维矩阵</h3>
+<p>以 BU 内的业务职责或流程作为实际评估单元。X 轴业务生命周期决定投入方式与运营节奏。Y 轴 AI 参与深度以所承担的业务决策和动作权限为主判据，另记系统耦合、数据敏感度、动作可逆性和接管能力。坐标用于选治理和部署规格。集团统一证据与审计契约，各 BU 定义任务、判据、授权和复核权。</p>
+<div class="scroll"><table>
+<thead><tr><th>业务生命周期</th><th>L0 人工/规则</th><th>L1 辅助</th><th>L2 流程嵌入</th><th>L3 受控自治</th><th>L4 原生持续演进</th></tr></thead>
+<tbody>
+<tr><th>初创探索</th><td>记录人工基线</td><td>快速比较人机效率</td><td>关键节点小批复测</td><td>限定授权与可逆试验</td><td>验证迭代收益与回滚</td></tr>
+<tr><th>规模成长</th><td>统一结果口径</td><td>追踪返工和接管</td><td>批量回归与单次成功成本</td><td>分批放量与异常接管</td><td>持续比较规则及执行版本</td></tr>
+<tr><th>成熟经营</th><td>沉淀规则与责任</td><td>评估节省与质量</td><td>审计节点及下游影响</td><td>按职责审查授权与恢复</td><td>联邦治理与结果复核</td></tr>
+<tr><th>收缩或再造</th><td>量化运营基线</td><td>验证人工节省</td><td>验证覆盖及例外成本</td><td>按关键业务约束审查替代</td><td>独立验证新模式及退出条件</td></tr>
+</tbody></table></div>
+<p>L4 表示业务以 AI 为核心并具备持续学习机制。关键决定仍可由人负责。在任何阶段，不可逆或影响重大的动作都需要与其风险相匹配的证据和接管安排。行业选择、部署拓扑、模型架构和算力配置随数据条件及业务风险确定。</p>
+<h3>2.4 各方责任、权限与收益</h3>
+<div class="scroll"><table>
+<thead><tr><th>利益相关方</th><th>负责提供与维护</th><th>决定权</th><th>获得的收益</th></tr></thead>
+<tbody>
+<tr><td>业务负责人 / 数智化负责人</td><td>业务目标、规则与例外、效果指标、风险容忍度，以及规则修订后的业务复核。</td><td>确定策略、职责委托和业务验收，承担经营结果。</td><td>规则清晰、可委托范围可见，能判断迭代投入是否值得。</td></tr>
+<tr><td>一线业务人员 / 领域专家</td><td>提交典型与异常案例，解释业务语义，复核疑难样本和人工接管结果。</td><td>按业务授权处理例外，确认样本与判据的解释。</td><td>减少重复返工，保留专业经验，改进人机分工。</td></tr>
+<tr><td>生产 Agent 应用团队</td><td>被测版本、受控运行入口、运行快照、问题修复和复测。</td><td>选择实现改进，在业务授权内提交候选版本。</td><td>更快定位失败链，验证修复与回归，减少重复排障。</td></tr>
+<tr><td>平台、数据与运维团队</td><td>证据来源、访问与留存边界、生产接管与恢复方式。</td><td>依据数据和运行职责批准接口与环境，执行既定处置。</td><td>跨 Agent 和 Harness 统一问题分流，缩短定位与恢复时间。</td></tr>
+<tr><td>治理与发布责任人</td><td>发布门槛、审批、例外处理和回滚要求。</td><td>按授权审批发布、暂停或回滚实际部署。</td><td>可复核的变更依据与责任记录。</td></tr>
+<tr><td>Decision Lab 团队</td><td>度量契约、证据质量、评分与诊断可追溯、复测与结果交付。</td><td>声明什么可比、证据是否充分，给出评价与建议。</td><td>沉淀可跨 BU 复用的接入、评价与诊断能力。</td></tr>
+</tbody></table></div>
+</section>
+<section id="architecture">
+<h2>三　架构设计</h2>
+<h3 id="domain">3.1 从经营目标到评测证据</h3>
+<p>架构以业务职责连接企业的两条改进路径。上游保留目标、规则与授权语义，中间用评测任务把这些要求变成可核验的判据，下游把评价交回原有决策系统。连接器、执行适配器、评分器和领域指标按契约扩展，共用证据来源、版本关联、状态语义与审计。</p>
+<div class="scroll"><table>
+<thead><tr><th>领域</th><th>关键对象</th><th>必须守住的规则</th></tr></thead>
+<tbody>
+<tr><td>业务语义</td><td>业务目标、业务职责、规则版本、授权策略、评测任务与用例版本</td><td>一项职责可拆成多项任务。任务明确适用情境、成功条件、关键约束和所需证据。业务责任人确认规则与例外。</td></tr>
+<tr><td>被测方案</td><td>Agent 或模型方案版本、声明配置、实际运行快照</td><td>保留已知依赖版本与未知声明，支持单模型、规则、混合策略和多步 Agent。</td></tr>
+<tr><td>实验与证据</td><td>实验计划、试验、尝试、调用、观察与业务结果</td><td>执行前冻结用例、被测方案、协议和预算。导入与受控运行共用证据契约，显式记录来源和完整度。试验、平台重试、模型调用分别计数。</td></tr>
+<tr><td>评价与分析</td><td>逐项评价、诊断、报告、能力画像、业务结果对比</td><td>评价绑定证据和评分版本。重评分追加历史。报告声明分母、缺失、适用范围与证据限制。遵守规则、协作效率和实际业务结果分别呈现。</td></tr>
+<tr><td>治理协同</td><td>回归结论、准入证据、授权建议、复核记录</td><td>业务结论绑定职责、规则、被测方案及适用条件。授权决定有责任人、证据引用和复测条件。比较前验证可比性。授权生效由业务或治理系统决定。</td></tr>
+</tbody></table></div>
+<p class="callout">一次变更至少要能区分三种情况：Agent 变了、业务规则变了、评分口径变了。三者独立版本化。成对比较需明确条件一致的用例、变更因素、缺失和关键切片。</p>
+<h3>3.2 六层 Agent 架构如何进入评测</h3>
+<div class="scroll"><table>
+<thead><tr><th>被测层</th><th>可关联证据</th><th>可验证问题</th></tr></thead>
+<tbody>
+<tr><td>Agent 定义</td><td>目标、权限、配置与引用版本</td><td>实际执行是否符合职责与权限。</td></tr>
+<tr><td>Harness</td><td>分支、停止、重试、交接和上下文拼装事件</td><td>编排是否提前停止、重复执行或错误交接。</td></tr>
+<tr><td>Skill / Tool</td><td>调用选择、参数、版本、返回及外部状态</td><td>区分选错、传错、返回错误或使用错误。</td></tr>
+<tr><td>会话上下文与短期记忆</td><td>受权的上下文快照、指纹或引用</td><td>决策时是否具备必要信息。</td></tr>
+<tr><td>长期记忆、知识与本体</td><td>检索命中、适用版本、来源与时效</td><td>区分未检索到、资料过期和使用错误。</td></tr>
+<tr><td>执行单元、模型与基础设施</td><td>模型版本或未知声明、截断、超时和部署条件</td><td>区分可观察的运行限制与待验证的模型行为。</td></tr>
+</tbody></table></div>
+<h3 id="interfaces">3.3 接入、执行和评分契约</h3>
+<ul>
+<li><strong>证据接入。</strong> 通过可插拔连接器对接现有轨迹、业务结果或外部评测记录。契约包含租户、来源、任务/试验关联、版本和证据可见性。按授权采用脱敏快照或引用，记录引用过期与来源版本变化。</li>
+<li><strong>受控执行。</strong> 通过适配器接单步模型、外部 Agent 或受控环境。持久 Worker 管理领取、预算、取消及恢复。复测有外部副作用时，使用环境隔离或模拟的测试权限。已登记调用结果未知时保留事实与预算占用。</li>
+<li><strong>可插拔评价。</strong> 每种评分器声明输入证据和版本，可接规则、业务约束、人工复核与校准后的模型裁判。评分器故障、证据不足和任务未通过分别表达。确定性重评分复用原始证据。模型裁判使用独立预算。</li>
+<li><strong>共享应用服务。</strong> CLI、界面和未来的 API 共用领域规则、权限和状态语义。以任务和证据能力做适配校验，允许部分轨迹和异构部署。新的适配形态通过契约测试验证兼容。</li>
+</ul>
+</section>
+<section id="rollout">
+<h2>四　落地规划</h2>
+<h3>4.1 设计推进与生产验证</h3>
+<ol>
+<li><strong>评审整体方案。</strong> 先确认愿景、双维矩阵、各方责任与决策权，以及生产度量如何反馈给业务。以场景风险和可用数据确定后续验证范围。</li>
+<li><strong>验证度量内核。</strong> 用行业中立的单步决策与外部多步证据检验导入、版本比较、缺失判定、人工复核和重评分。验证同一内核能容纳不同业务判据。</li>
+<li><strong>在生产中验证组织学习。</strong> 选择拥有责任人、实际业务结果与合法接入方式的 BU。保留现行基线，先在限定范围内验证，通过一次真实改规则、改 Agent 或改授权的决定完成闭环。</li>
+<li><strong>验证跨 BU 复用。</strong> 选择不同生命周期或自治深度的业务，保留通用契约，允许自有指标、权限与复核节奏。对照接入成本和日常运营负担，检验联邦式设计。</li>
+</ol>
+<h3 id="ownership">4.2 交付团队如何协作</h3>
+<p>每个试点由业务负责人确认职责、可接受风险与衡量口径，应用团队提交运行清单和受控复测能力，数据与运维团队交付经授权的证据与异常接管安排。Decision Lab 团队产出可复核的评测证据，业务治理与发布责任人用原有权限流程处理验收、例外和实际变更。</p>
+<p>交接时至少能对齐业务职责与规则版本、样例和适用条件、Agent 运行版本、轨迹与业务结果关联、判据与分母、决定与复测条件。业务代表能复核规则与结果，工程团队能重新运行或说明原因，发布方能把批准的范围关联到具体证据。</p>
+<h3 id="review">4.3 开工前的架构评审与验收依据</h3>
+<ul>
+<li><strong>领域与责任。</strong> 职责、任务、证据和授权决定能画出关联。业务规则和评分口径的维护者明确。</li>
+<li><strong>数据与部署。</strong> 确认来源、权限、脱敏、保留期限、部署边界及受控执行方式。共享环境确认项目隔离与凭据范围。</li>
+<li><strong>验证规格。</strong> 按职责定义证据覆盖、评测可靠性、预算、恢复和可追溯性要求。试点验证是否产生真实改变、是否能复测，以及是否能对照经营效果。至少验证缺证据、评分异常、任务中断与版本变化。</li>
+<li><strong>演进与迁移。</strong> 梳理原型的能力复用、数据迁移、契约变更、回退和确认人。整体方案评审后再调整仓库层面的架构与实施计划。</li>
+</ul>
+<p>待评审决定包括首发行业、首批接入协议与证据来源、部署拓扑、具体性能目标和第一阶段交付范围。</p>
+</section>
+<section id="risks">
+<h2>五　技术难题</h2>
+<p>现有原型已验证单机调度与部分模型评测。外部多轮证据、生产结果关联、跨项目隔离和业务归因是待验证的工程问题。</p>
+<div class="scroll"><table>
+<thead><tr><th>难题</th><th>设计约束</th><th>可检查的证据</th></tr></thead>
+<tbody>
+<tr><td>策略差异与度量效度</td><td>评价绑定业务目标、策略版本和适用条件。分开记录规则遵守、人工协作与经营效果，允许不同 BU 使用不同权重和阈值。</td><td>人工复核争议样本，记录可比条件。能解释规则变更与 Agent 变更对结论的不同影响。</td></tr>
+<tr><td>生产结果滞后与效果归因</td><td>按业务事件关联后续结果，记录观察窗口、未观察到的结果及外部变化。根据决策重要性采用分组、分批或其他适当对照。</td><td>能区分已观测差异和可归因效果。证据不足时该判断保持待验证。</td></tr>
+<tr><td>画像与协作的有效性</td><td>维度绑定可观察行为与适用情境，记录人员、Agent 和 Harness 的职责与交接。不同试验种类声明统计单位。</td><td>用重复试验与实际交接结果复核画像，区分局部改善与端到端成功。</td></tr>
+<tr><td>异构轨迹、字段缺失和版本漂移</td><td>通用信封保留来源与版本，支持领域证据扩展。原始信息缺失要传到报告。</td><td>样例轨迹映射覆盖、来源可回溯、缺失能被解释。</td></tr>
+<tr><td>区分表象与根因</td><td>区分首次偏差、疑因和复测支持的归因。用可观察行为、受控替换和外部状态校验。</td><td>相同历史证据可复核，归因说明包含验证条件。</td></tr>
+<tr><td>评分口径可信与指标被优化</td><td>优先检查业务结果和硬约束。保留人工复核与独立测试集，按关键群组查看退化。分开报告评分覆盖、业务成功及结果未知。</td><td>评分与人工判断的一致性、关键用例变化、各指标分母和测试分布可查。</td></tr>
+<tr><td>重放副作用、故障和成本</td><td>隔离测试环境，持久记录调用、额度和中断恢复。评测预算单独管控，区分被测调用与裁判调用。</td><td>取消、回滚、重试与故障恢复有验证记录。</td></tr>
+<tr><td>企业数据与联邦治理</td><td>按 BU 管理任务与审批权，集团统一最小证据契约与审计。共享访问前验证授权、凭据与数据隔离。</td><td>越权测试、保留与清理记录、导出范围、恢复演练。</td></tr>
+</tbody></table></div>
+</section>
+<footer>编排参考《智能体工坊整体方案 V2.15》。项目事实依据 Decision Lab 的架构、实施计划与交付日志，以及本轮业务与架构讨论。</footer>
+</main>
+</body>
+</html>
